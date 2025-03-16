@@ -69,7 +69,7 @@ const ContactForm = ({ onSubmit }: ContactFormProps) => {
   ];
 
   return (
-    <div className="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-sm border">
+    <div className="max-w-xl mx-auto bg-card p-8 rounded-lg shadow-sm border">
       <h2 className="text-2xl font-bold mb-6">Before We Begin</h2>
       <p className="text-muted-foreground mb-8">
         To provide you with a personalized career analysis, we need a few details about you.
