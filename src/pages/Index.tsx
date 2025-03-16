@@ -57,7 +57,7 @@ const Index = () => {
             </motion.div>
             
             <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-black"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 20 }}
               transition={{ duration: 0.5, delay: 0.2 }}
