@@ -7,7 +7,10 @@ import {
   AlertTriangle, 
   ArrowRight,
   Zap,
-  Award 
+  Award,
+  Mail,
+  Upload,
+  Loader
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,14 +22,23 @@ import CareerPathCard from '@/components/career/CareerPathCard';
 import SchoolCard from '@/components/career/SchoolCard';
 import FaqCard from '@/components/career/FaqCard';
 import ContactForm from '@/components/career/ContactForm';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useCareerAnalysis } from '@/contexts/CareerAnalysisContext';
 
 const CareerAnalysis = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const { loading, error, careerData } = useCareerAnalysis();
   
   useEffect(() => {
     setIsLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (careerData) {
+      console.log('automationInsight value:', careerData.automationInsight);
+    }
+  }, [careerData]);
 
   const handleFormSubmit = () => {
     setShowAnalysis(true);
@@ -63,337 +75,311 @@ const CareerAnalysis = () => {
         </section>
       ) : (
         <>
-          {/* Hero Section */}
-          <section className="pt-16 pb-16 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <div className="container">
-              <div className="max-w-3xl mx-auto text-center">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 20 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
-                  <span className="inline-block px-3 py-1 mb-4 text-sm font-medium bg-primary/10 text-primary rounded-full">
-                    Career Assessment Report
-                  </span>
-                </motion.div>
-                
-                <motion.h1 
-                  className="text-3xl md:text-4xl font-bold mb-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 20 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  Your Personalized Career Analysis
-                </motion.h1>
-                
-                <motion.p 
-                  className="text-lg text-muted-foreground mb-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 20 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  Explore your career insights, skill recommendations, and personalized growth paths.
-                </motion.p>
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-32">
+              <Loader className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-xl font-medium">Analyzing your career profile...</p>
+              <p className="text-muted-foreground mt-2">This may take a moment</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="container max-w-3xl mx-auto py-16">
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {error || "An error occurred while analyzing your profile. Please try again."}
+                </AlertDescription>
+              </Alert>
+              <div className="mt-6 text-center">
+                <Button onClick={() => setShowAnalysis(false)}>
+                  Go Back
+                </Button>
               </div>
             </div>
-          </section>
-          
-          {/* Career Evaluation Section */}
-          <section className="py-16">
-            <div className="container">
-              <div className="max-w-5xl mx-auto">
-                <div className="mb-12">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-3">Career Evaluation</h2>
-                  <p className="text-muted-foreground">
-                    Based on your profile and current industry trends, here's a comprehensive analysis of your career outlook.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="col-span-1 flex flex-col items-center text-center">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <h3 className="font-medium mb-6">Job Automation Risk Score</h3>
-                      <ScoreIndicator score={7} size="lg" />
-                      <p className="mt-4 text-sm text-muted-foreground">
-                        Your current role has a <strong>moderate</strong> risk of automation within the next 3 years
-                      </p>
-                      
-                      <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-md">
-                        <div className="flex items-center mb-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 mr-2" />
-                          <h4 className="font-medium text-amber-800">Key Insight</h4>
-                        </div>
-                        <p className="text-sm text-amber-700">
-                          While your core role is safe, 35% of your daily tasks could be automated in the next 18 months.
-                        </p>
+          )}
+        
+          {!loading && !error && careerData && (
+            <>
+              {/* Data Sources Section */}
+              <section className="py-8 bg-slate-50 border-b border-slate-200">
+                <div className="container">
+                  <div className="max-w-5xl mx-auto">
+                    <div className="flex items-start space-x-4">
+                      <div className="rounded-full bg-primary/10 p-2 mt-1">
+                        <ShieldCheck className="h-5 w-5 text-primary" />
                       </div>
-                    </motion.div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-2 text-black">Analysis Sources & Methodology</h3>
+                        <p className="text-sm text-muted-foreground mb-5">
+                          Your profile was analyzed using our proprietary AI system powered by data from 
+                          the <strong>World Economic Forum's Future of Jobs Report 2025</strong>, <strong>LinkedIn Workplace Learning Report</strong>, 
+                          and <strong>Epoch AI</strong> research on automation trends and career development. 
+                          Analysis includes insights from McKinsey & Company, Vox technology specialists, and other leading 
+                          institutions studying workforce transformation in the AI era.
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8 mt-4">
+                          <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                            <img 
+                              src="/logos/World_Economic_Forum_logo.svg.png" 
+                              alt="World Economic Forum" 
+                              className="h-8 md:h-10 object-contain"
+                            />
+                          </div>
+                          <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                            <img 
+                              src="/logos/hd-linkedin-blue-official-logo-png-701751694779201bpivk39ebc.png" 
+                              alt="LinkedIn" 
+                              className="h-8 md:h-10 object-contain"
+                            />
+                          </div>
+                          <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                            <img 
+                              src="/logos/epoch-full-standard.svg" 
+                              alt="Epoch AI" 
+                              className="h-8 md:h-10 object-contain"
+                            />
+                          </div>
+                          <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                            <img 
+                              src="/logos/McKinsey-Logo.png" 
+                              alt="McKinsey" 
+                              className="h-8 md:h-10 object-contain"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="col-span-1 md:col-span-2 space-y-8">
-                    <div>
-                      <h3 className="font-medium mb-4">Key Strengths</h3>
-                      <div className="space-y-3">
-                        <StrengthItem
-                          strength="Analytical Thinking"
-                          description="You excel at breaking down complex problems and drawing insightful conclusions, a skill increasingly valued as AI becomes mainstream."
-                          index={0}
-                        />
-                        <StrengthItem
-                          strength="Project Management"
-                          description="Your ability to coordinate resources, timelines, and stakeholders remains a distinctly human skill resistant to automation."
-                          index={1}
-                        />
-                        <StrengthItem
-                          strength="Stakeholder Communication"
-                          description="Your exceptional communication skills allow you to bridge technical and business domains effectively."
-                          index={2}
-                        />
+                </div>
+              </section>
+              
+              {/* Career Evaluation Section */}
+              <section className="py-16">
+                <div className="container">
+                  <div className="max-w-5xl mx-auto">
+                    <div className="mb-12">
+                      <h2 className="text-2xl md:text-3xl font-bold mb-3">Career Evaluation</h2>
+                      <p className="text-muted-foreground">
+                        Based on your profile and current industry trends, here's a comprehensive analysis of your career outlook.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <div className="col-span-1 flex flex-col items-center text-center">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <h3 className="font-medium mb-6">Job Automation Risk Score</h3>
+                          <ScoreIndicator score={careerData.automationRiskScore} size="lg" />
+                          <p className="mt-4 text-sm text-muted-foreground">
+                            Your current role has a <strong>{careerData.automationRiskScore < 4 ? 'low' : careerData.automationRiskScore < 7 ? 'moderate' : 'high'}</strong> risk of automation within the next 3 years
+                          </p>
+                          
+                          <div className="border-l-4 border-amber-400 pl-4 bg-amber-50 p-3 rounded-r-lg mb-6">
+                            <div className="flex items-start">
+                              <AlertTriangle className="h-5 w-5 text-amber-400 mr-2 mt-0.5" />
+                              <p className="text-sm text-amber-700">
+                                {careerData.automationInsight || "While your core role is safe, 35% of your daily tasks could be automated in the next 18 months."}
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                      
+                      <div className="col-span-1 md:col-span-2 space-y-8">
+                        <div>
+                          <h3 className="font-medium mb-4">Key Strengths</h3>
+                          <div className="space-y-3">
+                            {careerData.strengths.map((strength, index) => (
+                              <StrengthItem
+                                key={index}
+                                strength={strength.strength}
+                                description={strength.description}
+                                descriptionDetails={strength.descriptionDetails}
+                                index={index}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-medium mb-4">Skills to Improve</h3>
+                          <div className="space-y-3">
+                            {careerData.skillsToImprove.map((skill, index) => (
+                              <SkillItem
+                                key={index}
+                                skill={skill.skill}
+                                description={skill.description}
+                                detailDescription={skill.detailDescription}
+                                index={index}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
-                    <div>
-                      <h3 className="font-medium mb-4">Skills to Improve</h3>
-                      <div className="space-y-3">
-                        <SkillItem
-                          skill="Data Visualization"
-                          description="Enhancing your ability to present complex data in intuitive visual formats would give you a competitive edge in data-driven decisions."
-                          index={0}
-                        />
-                        <SkillItem
-                          skill="AI Implementation"
-                          description="Understanding how to implement and integrate AI tools would position you as a leader in the evolving workplace."
-                          index={1}
-                        />
-                        <SkillItem
-                          skill="Strategic Planning"
-                          description="Developing long-term planning skills would complement your existing project management expertise and position you for leadership roles."
-                          index={2}
-                        />
+                    <div className="mt-16">
+                      <h3 className="font-medium mb-6">Recommended Career Paths</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {careerData.recommendedCareerPaths.map((path, index) => (
+                          <CareerPathCard
+                            key={index}
+                            title={path.title}
+                            description={path.description}
+                            growthRate={path.growthRate}
+                            demandLevel={path.demandLevel as "High" | "Medium" | "Low"}
+                            skillsRequired={path.skillsRequired}
+                            index={index}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="mt-16">
-                  <h3 className="font-medium mb-6">Recommended Career Paths</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <CareerPathCard
-                      title="Data Analytics Manager"
-                      description="Lead data-driven decision making processes and oversee analytics teams to extract valuable business insights."
-                      growthRate="+24% in 3 years"
-                      demandLevel="High"
-                      skillsRequired={["Data Visualization", "Team Leadership", "Statistical Analysis"]}
-                      index={0}
-                    />
-                    <CareerPathCard
-                      title="AI Implementation Specialist"
-                      description="Bridge the gap between technical AI capabilities and business needs, helping organizations adopt AI effectively."
-                      growthRate="+35% in 3 years"
-                      demandLevel="High"
-                      skillsRequired={["AI Knowledge", "Change Management", "Technical Integration"]}
-                      index={1}
-                    />
-                    <CareerPathCard
-                      title="Strategic Program Director"
-                      description="Oversee multiple projects aligned with organizational goals, ensuring successful execution of company vision."
-                      growthRate="+18% in 3 years"
-                      demandLevel="Medium"
-                      skillsRequired={["Strategic Planning", "Resource Allocation", "Executive Communication"]}
-                      index={2}
-                    />
+              </section>
+              
+              {/* Upskilling & Learning Recommendations */}
+              <section className="py-16 bg-secondary">
+                <div className="container">
+                  <div className="max-w-5xl mx-auto">
+                    <div className="mb-12">
+                      <h2 className="text-2xl md:text-3xl font-bold mb-3">Hear out what our learners say...</h2>
+                      <p className="text-muted-foreground">
+                        Discover how our program transforms careers and helps professionals reach their full potential.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-white rounded-xl shadow-md p-8">
+                      <div className="flex flex-col md:flex-row md:items-start gap-6">
+                        <div className="flex-shrink-0">
+                          <img 
+                            src="/logos/daniar-profile.jpg" 
+                            alt="Daniar Abdraiymov" 
+                            className="w-24 h-24 rounded-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "https://ui-avatars.com/api/?name=Daniar+Abdraiymov&background=0D8ABC&color=fff";
+                            }}
+                          />
+                        </div>
+                        
+                        <div className="flex-grow">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
+                            <h3 className="text-xl font-semibold text-black">Daniar Abdraiymov</h3>
+                            <span className="text-muted-foreground">Mar 11, 2025</span>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <p className="text-muted-foreground">Student • Web development • Online</p>
+                            <div className="flex items-center mt-1">
+                              <div className="rounded-full bg-emerald-100 p-1 mr-2">
+                                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                              </div>
+                              <span className="text-emerald-600 text-sm font-medium">Verified by GitHub</span>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-black">Overall Experience</span>
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-black">Instructors</span>
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-black">Curriculum</span>
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-black">Job Assistance</span>
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <h4 className="text-lg font-medium mb-4 text-black">The best way to learn Programming</h4>
+                          
+                          <div className="space-y-4 text-gray-700">
+                            <p>
+                              Before attending Turing College, I began my journey in web development through various courses on YouTube and Udemy. Although I had the opportunity to learn programming independently, I struggled significantly without the guidance of mentors and team leads. As a beginner, I found my self-study approach to be somewhat chaotic, uncertain about what, how, and when to study.
+                            </p>
+                            <p>
+                              Turing College provided a clear, structured learning path that immediately advanced my skills as a programmer. The availability of experienced mentors, supportive staff, and knowledgeable peers has been invaluable. These mentors, who are seasoned engineers in the industry, have helped me understand how real-world projects are developed and executed.
+                            </p>
+                            <p>
+                              Regardless of your background, I highly recommend Turing College. You will benefit from a supportive community, access to an excellent learning platform, and opportunities to network with remarkable individuals.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
-          
-          {/* Upskilling & Learning Recommendations */}
-          <section className="py-16 bg-secondary">
-            <div className="container">
-              <div className="max-w-5xl mx-auto">
-                <div className="mb-12">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-3">Upskilling & Learning Recommendations</h2>
-                  <p className="text-muted-foreground">
-                    Based on your career goals and industry trends, here are personalized learning recommendations to enhance your skill set.
-                  </p>
+              </section>
+              
+              {/* Career Fears & Uncertainties */}
+              <section className="py-16">
+                <div className="container">
+                  <div className="max-w-5xl mx-auto">
+                    <div className="mb-12">
+                      <h2 className="text-2xl md:text-3xl font-bold mb-3">Addressing Career Fears & Uncertainties</h2>
+                      <p className="text-muted-foreground">
+                        Expert-backed answers to common career concerns to help you navigate uncertainties with confidence.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {careerData.faqs && careerData.faqs.map((faq, index) => (
+                        <FaqCard
+                          key={index}
+                          question={faq.question}
+                          answer={faq.answer}
+                          index={index}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <SchoolCard
-                    name="DataCamp"
-                    logoUrl=""
-                    description="Specialized in data science and analytics courses with hands-on learning and interactive exercises."
-                    reviewSource="Trustpilot"
-                    reviewScore={4.7}
-                    reviewCount={2845}
-                    programs={[
-                      {
-                        name: "Data Visualization with Python",
-                        duration: "2 months",
-                        cost: "$39/month"
-                      },
-                      {
-                        name: "Data Science Career Track",
-                        duration: "6 months",
-                        cost: "$399 total"
-                      },
-                      {
-                        name: "Business Analytics",
-                        duration: "3 months",
-                        cost: "$25/month"
-                      }
-                    ]}
-                    index={0}
-                  />
-                  
-                  <SchoolCard
-                    name="Coursera"
-                    logoUrl=""
-                    description="Partnership with top universities offering accredited certificates and specializations in various fields."
-                    reviewSource="Google Reviews"
-                    reviewScore={4.5}
-                    reviewCount={3256}
-                    programs={[
-                      {
-                        name: "AI For Business",
-                        duration: "4 months",
-                        cost: "$49/month"
-                      },
-                      {
-                        name: "Strategic Management & Leadership",
-                        duration: "8 months",
-                        cost: "$399 total"
-                      },
-                      {
-                        name: "Project Management Professional",
-                        duration: "6 months",
-                        cost: "$49/month"
-                      }
-                    ]}
-                    index={1}
-                  />
-                  
-                  <SchoolCard
-                    name="LinkedIn Learning"
-                    logoUrl=""
-                    description="Professional development platform with courses covering business, creative, and technical skills."
-                    reviewSource="Trustpilot"
-                    reviewScore={4.3}
-                    reviewCount={1987}
-                    programs={[
-                      {
-                        name: "Leadership Communication",
-                        duration: "1 month",
-                        cost: "$29.99/month"
-                      },
-                      {
-                        name: "Strategic Planning Foundations",
-                        duration: "3 weeks",
-                        cost: "$29.99/month"
-                      },
-                      {
-                        name: "Advanced Project Management",
-                        duration: "2 months",
-                        cost: "$29.99/month"
-                      }
-                    ]}
-                    index={2}
-                  />
-                  
-                  <SchoolCard
-                    name="Udacity"
-                    logoUrl=""
-                    description="Industry-focused nanodegree programs created in partnership with leading technology companies."
-                    reviewSource="CourseReport"
-                    reviewScore={4.6}
-                    reviewCount={1245}
-                    programs={[
-                      {
-                        name: "AI Product Manager",
-                        duration: "3 months",
-                        cost: "$399/month"
-                      },
-                      {
-                        name: "Data Scientist",
-                        duration: "4 months",
-                        cost: "$399/month"
-                      },
-                      {
-                        name: "Business Analytics",
-                        duration: "3 months",
-                        cost: "$399/month"
-                      }
-                    ]}
-                    index={3}
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-          
-          {/* Career Fears & Uncertainties */}
-          <section className="py-16">
-            <div className="container">
-              <div className="max-w-5xl mx-auto">
-                <div className="mb-12">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-3">Addressing Career Fears & Uncertainties</h2>
-                  <p className="text-muted-foreground">
-                    Expert-backed answers to common career concerns to help you navigate uncertainties with confidence.
-                  </p>
-                </div>
-                
-                <div className="space-y-4">
-                  <FaqCard
-                    question="How do I effectively navigate a mid-life career change?"
-                    answer="A successful mid-life career change requires a strategic approach. Start by identifying transferable skills from your current role, then research industries with lower barriers to entry for professionals with your experience level. Consider a gradual transition through upskilling while in your current position, and leverage your professional network to explore opportunities. Most successful mid-life career changers take 12-18 months to fully transition, using short-term consulting or project work to build credibility in their new field while maintaining financial stability."
-                    index={0}
-                  />
-                  
-                  <FaqCard
-                    question="What steps can I take to overcome workplace fears and uncertainties?"
-                    answer="Workplace fears often stem from uncertainty and perceived lack of control. Create a detailed development plan with specific, measurable goals to regain a sense of direction. Identify the specific triggers of your workplace anxiety and address them individually. Build a support network of mentors, peers, and if necessary, professional coaches. Regularly assess your market value by researching comparable positions and required skills. Finally, maintain work-life boundaries and practice regular reflection on accomplishments to build confidence over time."
-                    index={1}
-                  />
-                  
-                  <FaqCard
-                    question="What essential AI-driven skills should I develop to stay relevant?"
-                    answer="As AI transforms the workplace, focus on developing these key skills: AI literacy (understanding AI capabilities and limitations), data interpretation (making meaning from AI-processed information), critical thinking (evaluating AI recommendations), ethical judgment (making decisions where AI provides data but cannot make value judgments), collaboration with AI tools (knowing when and how to leverage them), and adaptive learning (continuously updating your skillset as AI evolves). Most professionals should aim to spend 3-5 hours weekly developing these skills through courses, projects, and deliberate practice."
-                    index={2}
-                  />
-                  
-                  <FaqCard
-                    question="How can I leverage my existing experience for new opportunities?"
-                    answer="Start by conducting a comprehensive skills inventory, categorizing your abilities into technical, transferable, and adaptive skills. Research how professionals with similar backgrounds have successfully pivoted to new roles or industries. Create compelling narratives that connect your past achievements to future aspirations, focusing on outcomes rather than responsibilities. Strategically seek 'bridge experiences' through volunteer work, side projects, or targeted roles that can serve as stepping stones. Finally, customize your resume and online presence to highlight relevant experience for specific opportunities rather than presenting a chronological work history."
-                    index={3}
-                  />
-                  
-                  <FaqCard
-                    question="How should I prepare for AI-driven changes in my industry?"
-                    answer="Start by researching current and upcoming AI implementations specific to your industry through industry publications and conferences. Identify which aspects of your role are most susceptible to automation and which require uniquely human skills. Engage with early AI tools in your field, even in limited ways, to develop familiarity. Build relationships with technical teams implementing AI in your organization to gain insights into strategic directions. Create a personal adaptation roadmap with quarterly learning goals focused on complementary skills that enhance rather than compete with AI capabilities."
-                    index={4}
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-          
-          {/* CTA Section */}
-          <section className="py-16 bg-primary text-white">
-            <div className="container text-center">
-              <h2 className="text-2xl md:text-3xl font-bold mb-6">Take Your Career to the Next Level</h2>
-              <p className="text-primary-foreground/90 max-w-2xl mx-auto mb-8">
-                Dive deeper into personalized career development with our premium features, including one-on-one career coaching and detailed industry reports.
-              </p>
-              <Button variant="secondary" size="lg" className="px-6">
-                Explore Premium Features <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </section>
+              </section>
+            </>
+          )}
         </>
       )}
     </PageLayout>

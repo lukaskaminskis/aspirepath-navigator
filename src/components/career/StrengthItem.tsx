@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -6,6 +5,7 @@ import { cn } from '@/lib/utils';
 type StrengthItemProps = {
   strength: string;
   description: string;
+  descriptionDetails?: string[];
   index?: number;
   className?: string;
 };
@@ -13,6 +13,7 @@ type StrengthItemProps = {
 export const StrengthItem = ({ 
   strength, 
   description, 
+  descriptionDetails = [],
   index = 0, 
   className 
 }: StrengthItemProps) => {
@@ -32,8 +33,20 @@ export const StrengthItem = ({
     >
       <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
       <div>
-        <h4 className="font-medium">{strength}</h4>
-        <p className="text-muted-foreground text-sm mt-1">{description}</p>
+        <h4 className="font-medium text-black">{strength}</h4>
+        <div className="space-y-1 mt-1">
+          <p className="text-muted-foreground text-sm">{description}</p>
+          {descriptionDetails.length > 0 ? (
+            descriptionDetails.map((detail, i) => (
+              <p key={i} className="text-muted-foreground text-sm">{detail}</p>
+            ))
+          ) : (
+            <>
+              <p className="text-muted-foreground text-sm">You consistently demonstrate this strength through effective communication and relationship building.</p>
+              <p className="text-muted-foreground text-sm">This skill will remain valuable as AI transforms the workplace and creates new opportunities.</p>
+            </>
+          )}
+        </div>
       </div>
     </motion.div>
   );

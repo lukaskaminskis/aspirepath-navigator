@@ -1,69 +1,168 @@
-# Welcome to your Lovable project
+# AspirePath Navigator
 
-## Project info
+AspirePath Navigator is an AI-powered career analysis platform that helps professionals understand their career trajectory, automation risks, and upskilling opportunities. The platform provides personalized insights by analyzing LinkedIn profiles and resumes.
 
-**URL**: https://lovable.dev/projects/be0f51ad-f9d6-43c0-9402-9db622e099d0
+## Features
 
-## How can I edit this code?
+- **Career Analysis Dashboard**
+  - Automation risk assessment
+  - Key strengths evaluation
+  - Skills improvement recommendations
+  - Personalized career path suggestions
+  - Real student testimonials
+  - Career uncertainties FAQ
 
-There are several ways of editing your application.
+- **Smart Analysis**
+  - LinkedIn profile analysis
+  - Resume parsing
+  - AI-powered insights
+  - Data-driven recommendations
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/be0f51ad-f9d6-43c0-9402-9db622e099d0) and start prompting.
+### Frontend
+- React with TypeScript
+- Tailwind CSS for styling
+- Framer Motion for animations
+- Shadcn UI components
+- React Hook Form for form handling
+- Zod for form validation
 
-Changes made via Lovable will be committed automatically to this repo.
+### Backend
+- FastAPI (Python)
+- PostgreSQL (Heroku)
+- LangChain for AI processing
+- SQLAlchemy ORM
+- Alembic for migrations
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
+- Node.js (v18+)
+- Python (3.9+)
+- PostgreSQL
+- Heroku CLI (for deployment)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Frontend Setup
+1. Navigate to the frontend directory:
+   ```bash
+   cd aspirepath-navigator
+   ```
 
-Follow these steps:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Create a `.env` file:
+   ```env
+   VITE_API_URL=http://localhost:8000
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Backend Setup
+1. Navigate to the backend directory:
+   ```bash
+   cd aspirepath-navigator-backend
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Create a `.env` file:
+   ```env
+   DATABASE_URL=postgresql://user:password@localhost:5432/aspirepath
+   OPENAI_API_KEY=your_openai_api_key
+   ```
+
+5. Run migrations:
+   ```bash
+   alembic upgrade head
+   ```
+
+6. Start the backend server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+## Database Setup
+
+### Local Development
+1. Create a PostgreSQL database:
+   ```bash
+   createdb aspirepath
+   ```
+
+2. Update the DATABASE_URL in `.env`
+
+### Heroku Deployment
+1. Create a Heroku app:
+   ```bash
+   heroku create aspirepath-navigator
+   ```
+
+2. Add Postgres:
+   ```bash
+   heroku addons:create heroku-postgresql:mini
+   ```
+
+3. Set environment variables:
+   ```bash
+   heroku config:set OPENAI_API_KEY=your_openai_api_key
+   ```
+
+## Project Structure
+
+```
+aspirepath-navigator/
+├── src/
+│   ├── components/     # React components
+│   ├── contexts/       # React contexts
+│   ├── hooks/         # Custom hooks
+│   ├── lib/           # Utility functions
+│   ├── pages/         # Page components
+│   ├── services/      # API services
+│   └── types/         # TypeScript types
+└── public/            # Static assets
+
+aspirepath-navigator-backend/
+├── app/
+│   ├── core/          # Core configurations
+│   ├── models/        # Database models
+│   ├── schemas/       # Pydantic schemas
+│   ├── services/      # Business logic
+│   └── api/           # API routes
+├── alembic/           # Database migrations
+└── tests/             # Test files
 ```
 
-**Edit a file directly in GitHub**
+## Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-**Use GitHub Codespaces**
+## License
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## What technologies are used for this project?
+## Acknowledgments
 
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/be0f51ad-f9d6-43c0-9402-9db622e099d0) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- World Economic Forum's Future of Jobs Report
+- LinkedIn Workplace Learning Report
+- Epoch AI research
+- McKinsey & Company insights

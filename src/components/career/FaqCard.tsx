@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
@@ -37,7 +36,7 @@ export const FaqCard = ({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full p-5 text-left"
       >
-        <h3 className="font-medium">{question}</h3>
+        <h3 className="font-medium text-black">{question}</h3>
         <ChevronDown
           className={cn(
             "h-5 w-5 text-muted-foreground transition-transform",

@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { ExternalLink, Star, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -55,7 +54,7 @@ export const SchoolCard = ({
           )}
         </div>
         <div>
-          <h3 className="font-medium">{name}</h3>
+          <h3 className="font-medium text-black">{name}</h3>
           <div className="flex items-center mt-1 text-sm">
             <div className="flex items-center text-amber-500">
               <Star className="h-3.5 w-3.5 fill-current" />

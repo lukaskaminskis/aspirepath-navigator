@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -6,6 +5,7 @@ import { cn } from '@/lib/utils';
 type SkillItemProps = {
   skill: string;
   description: string;
+  detailDescription?: string;
   index?: number;
   className?: string;
 };
@@ -13,6 +13,7 @@ type SkillItemProps = {
 export const SkillItem = ({ 
   skill, 
   description, 
+  detailDescription,
   index = 0, 
   className 
 }: SkillItemProps) => {
@@ -32,8 +33,11 @@ export const SkillItem = ({
     >
       <TrendingUp className="h-5 w-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
       <div>
-        <h4 className="font-medium">{skill}</h4>
-        <p className="text-muted-foreground text-sm mt-1">{description}</p>
+        <h4 className="font-medium text-black">{skill}</h4>
+        <div className="space-y-1 mt-1">
+          <p className="text-muted-foreground text-sm">{description}</p>
+          <p className="text-muted-foreground text-sm">{detailDescription || "Developing this skill will significantly increase your resilience to automation and enhance your marketability in adjacent career paths."}</p>
+        </div>
       </div>
     </motion.div>
   );

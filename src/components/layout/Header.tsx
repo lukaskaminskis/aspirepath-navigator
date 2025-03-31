@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, ChevronRight } from 'lucide-react';
@@ -40,7 +39,7 @@ export const Header = () => {
         <nav className="hidden md:flex items-center space-x-8">
           <NavItems />
           <Button asChild>
-            <Link to="/get-started" className="flex items-center">
+            <Link to="/career-analysis" className="flex items-center">
               Get Started <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
@@ -61,7 +60,7 @@ export const Header = () => {
           <nav className="container flex flex-col py-5 space-y-4">
             <NavItems mobile />
             <Button asChild className="w-full">
-              <Link to="/get-started" className="flex items-center justify-center">
+              <Link to="/career-analysis" className="flex items-center justify-center">
                 Get Started <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
@@ -73,11 +72,7 @@ export const Header = () => {
 };
 
 const NavItems = ({ mobile = false }: { mobile?: boolean }) => {
-  const navItems = [
-    { name: 'About', path: '/about' },
-    { name: 'Career Analysis', path: '/career-analysis' },
-    { name: 'Resources', path: '/resources' },
-  ];
+  const navItems = [];
 
   return (
     <>
