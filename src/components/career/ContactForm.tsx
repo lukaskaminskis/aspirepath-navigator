@@ -102,26 +102,13 @@ const ContactForm = ({ onSubmit }: ContactFormProps) => {
       } catch (apiError) {
         console.error('Error with real data processing:', apiError);
         
-        // Create a new FormData object for mock data
-        const mockFormData = new FormData();
-        if (data.linkedInUrl) mockFormData.append('linkedin_profile', data.linkedInUrl);
-        if (data.resumeFile) mockFormData.append('resume_file', data.resumeFile);
-        mockFormData.append('use_mock', 'true');
-        
-        // Try again with mock data
-        const mockResult = await careerAnalysisService.analyzeCareer(mockFormData);
-        
-        // Update context with mock data
-        setCareerData(mockResult);
+        setError('We encountered an issue processing your data. Please try again later.');
         
         toast({
-          title: "Using simulated data",
-          description: "We're showing example data because we couldn't process your profile. Try again later for personalized results.",
+          title: "Analysis failed",
+          description: "We couldn't process your profile at this time. Please try again later.",
           variant: "destructive"
         });
-        
-        // Call the onSubmit callback to show the analysis with mock data
-        onSubmit();
       }
     } catch (error) {
       console.error('Error submitting form:', error);

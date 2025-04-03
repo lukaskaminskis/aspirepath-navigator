@@ -21,7 +21,7 @@ declare module '@/contexts/CareerAnalysisContext' {
 
   export interface CareerAnalysisData {
     automationRiskScore: number;
-    automationInsight: string;
+    automationRiskInsight: string;
     strengths: Strength[];
     skillsToImprove: SkillToImprove[];
     recommendedCareerPaths: CareerPath[];

@@ -36,7 +36,7 @@ const CareerAnalysis = () => {
 
   useEffect(() => {
     if (careerData) {
-      console.log('automationInsight value:', careerData.automationInsight);
+      console.log('automationRiskInsight value:', careerData.automationRiskInsight);
     }
   }, [careerData]);
 
@@ -182,7 +182,7 @@ const CareerAnalysis = () => {
                             <div className="flex items-start">
                               <AlertTriangle className="h-5 w-5 text-amber-400 mr-2 mt-0.5" />
                               <p className="text-sm text-amber-700">
-                                {careerData.automationInsight || "While your core role is safe, 35% of your daily tasks could be automated in the next 18 months."}
+                                {careerData.automationRiskInsight || "While your core role is safe, 35% of your daily tasks could be automated in the next 18 months."}
                               </p>
                             </div>
                           </div>
