@@ -224,8 +224,8 @@ const CareerAnalysis = () => {
                     
                     <div className="mt-16">
                       <h3 className="font-medium mb-6">Recommended Career Paths</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {careerData.recommendedCareerPaths.map((path, index) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {careerData.recommendedCareerPaths.slice(0, 2).map((path, index) => (
                           <CareerPathCard
                             key={index}
                             title={path.title}

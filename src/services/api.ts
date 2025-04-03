@@ -6,11 +6,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Remove default Content-Type as it will be set per request
   // Set a longer timeout for the API calls
   timeout: 30000,
+  // Enable credentials for CORS
+  withCredentials: true
 });
 
 // Add a response interceptor
@@ -18,6 +18,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error);
+    if (error.response) {
+      console.error('Error Response:', error.response);
+      console.error('Error Status:', error.response.status);
+      console.error('Error Headers:', error.response.headers);
+    }
     return Promise.reject(error);
   }
 );
@@ -50,13 +55,16 @@ const careerAnalysisService = {
       console.log('Sending data to /api/v1/career/analyze with fields:', 
                   Object.fromEntries(formData.entries()));
       
+      // Create headers without Content-Type for FormData
+      // Let the browser set the Content-Type and boundary
       const response = await api({
         method: 'POST',
         url: '/api/v1/career/analyze',
         data: formData,
+        withCredentials: true,
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          Accept: 'application/json',
+        }
       });
       
       console.log('Received response:', response.data);
@@ -78,9 +86,10 @@ const careerAnalysisService = {
         method: 'POST',
         url: '/api/v1/vectorstore/setup-vectorstore',
         data: formData,
+        withCredentials: true,
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          Accept: 'application/json',
+        }
       });
       
       return response.data;
@@ -103,9 +112,10 @@ const contactService = {
         method: 'POST',
         url: '/api/v1/contact/submit',
         data: formData,
+        withCredentials: true,
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          Accept: 'application/json',
+        }
       });
       
       return response.data;
