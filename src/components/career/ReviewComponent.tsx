@@ -370,7 +370,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
                 {reviewData.student_type} • {reviewData.course} • {reviewData.format}
               </p>
               
-              {reviewData.verified === "Yes" && (
+              {(typeof reviewData.verified === 'boolean' ? reviewData.verified : reviewData.verified === "Yes") && (
                 <div className="flex items-center mt-1">
                   <div className="rounded-full bg-emerald-100 p-1 mr-2">
                     <Shield className="h-4 w-4 text-emerald-600" />
