@@ -294,14 +294,19 @@ const CareerAnalysis = () => {
                   </p>
                 </div>
                 
-                <ReviewComponent profileData={{
-                  skills: careerData.skillsToImprove.map(skill => skill.skill),
-                  experience: [],
-                  education: [],
-                  interests: [],
-                  course_interest: careerData.recommendedCareerPaths[0]?.title || "",
-                  program: careerData.recommendedCareerPaths[0]?.title || ""
-                }} />
+                {/* Only render ReviewComponent if we have careerData to prevent unnecessary API calls */}
+                {careerData && (
+                  <ReviewComponent 
+                    profileData={{
+                      skills: careerData.strengths.slice(0, 3).map(skill => skill.strength),
+                      experience: [],
+                      education: [],
+                      interests: [],
+                      course_interest: careerData.recommendedCareerPaths[0]?.title || "",
+                      program: careerData.recommendedCareerPaths[0]?.title || ""
+                    }} 
+                  />
+                )}
               </div>
             </div>
           </section>

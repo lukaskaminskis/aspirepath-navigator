@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { CareerAnalysisData } from '@/types/career';
+import api from '@/services/api';
 import { careerAnalysisService, reviewsService } from '@/services/api';
 
 // Define the shape of the context
@@ -162,7 +163,6 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
   const getRelevantReview = async (analysisData: CareerAnalysisData) => {
     // Prevent multiple calls at once
     if (isReviewLoading) {
-      console.log('Already fetching review, not starting another request');
       return;
     }
     
@@ -178,7 +178,6 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
     
     // Skip if we've already tried this exact analysis
     if (getRelevantReview._attemptedKeys.has(attemptKey)) {
-      console.log('Already attempted to get review for this analysis, skipping');
       return;
     }
     
@@ -187,9 +186,9 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
     
     try {
       setIsReviewLoading(true);
-      const strengths = analysisData.strengths.map(s => s.strength);
-      const skillsToImprove = analysisData.skillsToImprove.map(s => s.skill);
-      const careerPaths = analysisData.recommendedCareerPaths.map(p => p.title);
+      const strengths = analysisData.strengths.map(s => s.strength).slice(0, 3);
+      const skillsToImprove = analysisData.skillsToImprove.map(s => s.skill).slice(0, 3);
+      const careerPaths = analysisData.recommendedCareerPaths.map(p => p.title).slice(0, 1);
       
       // Use the top career path as the course interest
       const program = careerPaths.length > 0 ? careerPaths[0] : '';
@@ -204,26 +203,25 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
       };
       
       // Add timeout protection
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Review request timed out')), 8000);
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       
-      // Race between the actual request and the timeout
-      const response = await Promise.race([
-        reviewsService.getRelevantReview(profileData),
-        timeoutPromise
-      ]) as any;
-      
-      // Check if response has a review property before setting it
-      if (response && response.success !== false && response.review) {
-        console.log('Successfully fetched review');
-        setReview(response.review);
-      } else {
-        console.log('Review service returned empty or error response');
+      try {
+        const response = await reviewsService.getRelevantReview(profileData);
+        
+        // Check if response has a review property before setting it
+        if (response && response.success !== false && response.review) {
+          setReview(response.review);
+        } else {
+          setReview(undefined);
+        }
+      } catch (error) {
+        // Continue without a review - don't block the analysis display
         setReview(undefined);
+      } finally {
+        clearTimeout(timeoutId);
       }
     } catch (error) {
-      console.error('Error fetching relevant review - will not retry');
       // Continue without a review - don't block the analysis display
       setReview(undefined);
     } finally {
