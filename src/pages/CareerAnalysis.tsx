@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   BrainCircuit, 
@@ -32,16 +33,26 @@ const CareerAnalysis = () => {
   const [typeformResponseId, setTypeformResponseId] = useState<string | null>(null);
   const { isLoading, error, careerData, analyzeTypeformResponse } = useCareerAnalysis();
   
+  // Get responseId from URL params if available
+  const { responseId } = useParams<{ responseId?: string }>();
+  const navigate = useNavigate();
+  
   useEffect(() => {
     setIsLoaded(true);
-  }, []);
+    
+    // If responseId is in the URL, use it
+    if (responseId) {
+      setTypeformResponseId(responseId);
+      setShowAnalysis(true);
+    }
+  }, [responseId]);
 
   useEffect(() => {
     if (careerData) {
       console.log('automationRiskInsight value:', careerData.automationRiskInsight);
     }
   }, [careerData]);
-  
+
   useEffect(() => {
     // If we have a typeform response ID and the analysis display is active,
     // trigger the analysis process
@@ -53,6 +64,10 @@ const CareerAnalysis = () => {
   const handleTypeformSubmit = (responseId: string) => {
     setTypeformResponseId(responseId);
     setShowAnalysis(true);
+    
+    // Update URL with responseId for bookmarking/sharing
+    navigate(`/career-analysis/${responseId}`, { replace: true });
+    
     window.scrollTo(0, 0);
   };
 

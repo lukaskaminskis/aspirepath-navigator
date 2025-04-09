@@ -80,13 +80,17 @@ const careerAnalysisService = {
    * Analyze career using Typeform response data
    * @param responseId - Typeform response ID to analyze
    */
-  analyzeTypeformResponse: async (responseId: string): Promise<CareerAnalysisData> => {
+  analyzeTypeformResponse: async (responseId: string): Promise<{success: boolean, response_id: string, analysis: CareerAnalysisData}> => {
     try {
       console.log('Analyzing Typeform response with ID:', responseId);
       
+      // Add additional logging to debug the URL
+      const url = `/api/v1/typeform/analyze/${responseId}`;
+      console.log('Making request to URL:', url);
+      
       const response = await api({
         method: 'POST',
-        url: `/api/v1/typeform/analyze/${responseId}`,
+        url: url,
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
@@ -99,6 +103,8 @@ const careerAnalysisService = {
     } catch (error) {
       console.error('Error analyzing Typeform response:', error);
       console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
       throw error;
     }
   },
@@ -126,6 +132,9 @@ const careerAnalysisService = {
     }
   },
 };
+
+// Define service type for TypeScript
+export type CareerAnalysisServiceType = typeof careerAnalysisService;
 
 // Contact form service
 const contactService = {

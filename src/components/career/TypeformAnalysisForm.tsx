@@ -18,15 +18,24 @@ const TypeformAnalysisForm: React.FC<TypeformAnalysisFormProps> = ({
   // This function will be called when Typeform submission is complete
   const handleSubmit = ({ responseId }: { responseId: string }) => {
     console.log('Form submitted with response ID:', responseId);
-    setIsSubmitted(true);
     
-    // Call the callback function if provided
-    if (onSubmissionComplete) {
-      onSubmissionComplete(responseId);
+    try {
+      setIsSubmitted(true);
+      
+      // Call the callback function if provided
+      if (onSubmissionComplete) {
+        console.log('Calling onSubmissionComplete with responseId:', responseId);
+        onSubmissionComplete(responseId);
+      } else {
+        console.warn('No onSubmissionComplete callback provided');
+      }
+    } catch (error) {
+      console.error('Error in TypeformAnalysisForm handleSubmit:', error);
+      
+      // Show error state (optional)
+      setIsSubmitted(false);
+      alert('There was an error processing your submission. Please try again.');
     }
-    
-    // Redirect to analysis page or show loading state
-    navigate('/career-analysis/results');
   };
   
   return (
