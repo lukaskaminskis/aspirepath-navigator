@@ -32,12 +32,14 @@ declare module '@/contexts/CareerAnalysisContext' {
   }
 
   export interface CareerAnalysisContextProps {
-    loading: boolean;
-    setLoading: (loading: boolean) => void;
+    isLoading: boolean;
     error: string | null;
-    setError: (error: string | null) => void;
     careerData: CareerAnalysisData | null;
+    setIsLoading: (loading: boolean) => void;
+    setError: (error: string | null) => void;
     setCareerData: (data: CareerAnalysisData | null) => void;
+    analyzeProfile: (profileData: any) => Promise<void>;
+    analyzeTypeformResponse: (responseId: string) => Promise<void>;
   }
 
   export function useCareerAnalysis(): CareerAnalysisContextProps;

@@ -21,7 +21,7 @@ import SkillItem from '@/components/career/SkillItem';
 import CareerPathCard from '@/components/career/CareerPathCard';
 import SchoolCard from '@/components/career/SchoolCard';
 import FaqCard from '@/components/career/FaqCard';
-import ContactForm from '@/components/career/ContactForm';
+import TypeformAnalysisForm from '@/components/career/TypeformAnalysisForm';
 import ReviewComponent from '@/components/career/ReviewComponent';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCareerAnalysis } from '@/contexts/CareerAnalysisContext';
@@ -29,7 +29,8 @@ import { useCareerAnalysis } from '@/contexts/CareerAnalysisContext';
 const CareerAnalysis = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
-  const { loading, error, careerData } = useCareerAnalysis();
+  const [typeformResponseId, setTypeformResponseId] = useState<string | null>(null);
+  const { isLoading, error, careerData, analyzeTypeformResponse } = useCareerAnalysis();
   
   useEffect(() => {
     setIsLoaded(true);
@@ -40,8 +41,17 @@ const CareerAnalysis = () => {
       console.log('automationRiskInsight value:', careerData.automationRiskInsight);
     }
   }, [careerData]);
+  
+  useEffect(() => {
+    // If we have a typeform response ID and the analysis display is active,
+    // trigger the analysis process
+    if (typeformResponseId && showAnalysis) {
+      analyzeTypeformResponse(typeformResponseId);
+    }
+  }, [typeformResponseId, showAnalysis, analyzeTypeformResponse]);
 
-  const handleFormSubmit = () => {
+  const handleTypeformSubmit = (responseId: string) => {
+    setTypeformResponseId(responseId);
     setShowAnalysis(true);
     window.scrollTo(0, 0);
   };
@@ -67,16 +77,16 @@ const CareerAnalysis = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Connect your LinkedIn profile to get insights, skill recommendations, and personalized growth paths.
+                Complete our brief questionnaire to get insights, skill recommendations, and personalized growth paths.
               </motion.p>
             </div>
             
-            <ContactForm onSubmit={handleFormSubmit} />
+            <TypeformAnalysisForm onSubmissionComplete={handleTypeformSubmit} />
           </div>
         </section>
       ) : (
         <>
-          {loading && (
+          {isLoading && (
             <div className="flex flex-col items-center justify-center py-32">
               <Loader className="h-12 w-12 animate-spin text-primary mb-4" />
               <p className="text-xl font-medium">Analyzing your career profile...</p>
@@ -100,7 +110,7 @@ const CareerAnalysis = () => {
             </div>
           )}
         
-          {!loading && !error && careerData && (
+          {!isLoading && !error && careerData && (
             <>
               {/* Data Sources Section */}
               <section className="py-8 bg-slate-50 border-b border-slate-200">

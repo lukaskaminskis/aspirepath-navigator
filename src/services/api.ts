@@ -77,6 +77,33 @@ const careerAnalysisService = {
   },
   
   /**
+   * Analyze career using Typeform response data
+   * @param responseId - Typeform response ID to analyze
+   */
+  analyzeTypeformResponse: async (responseId: string): Promise<CareerAnalysisData> => {
+    try {
+      console.log('Analyzing Typeform response with ID:', responseId);
+      
+      const response = await api({
+        method: 'POST',
+        url: `/api/v1/typeform/analyze/${responseId}`,
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        }
+      });
+      
+      console.log('Received Typeform analysis response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error analyzing Typeform response:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  },
+  
+  /**
    * Set up the vector store with career documents
    * @param formData - FormData containing documents
    */
