@@ -57,7 +57,17 @@ const CareerAnalysis = () => {
     // If we have a typeform response ID and the analysis display is active,
     // trigger the analysis process
     if (typeformResponseId && showAnalysis) {
-      analyzeTypeformResponse(typeformResponseId);
+      console.log('Starting analysis for response ID:', typeformResponseId);
+      
+      // Call the analyze function directly - it now handles its own cleanup
+      analyzeTypeformResponse(typeformResponseId).catch(err => {
+        console.error('Error in typeform analysis:', err);
+      });
+      
+      // Handle component unmount - no specific cleanup needed now
+      return () => {
+        console.log('Component unmounting during analysis');
+      };
     }
   }, [typeformResponseId, showAnalysis, analyzeTypeformResponse]);
 

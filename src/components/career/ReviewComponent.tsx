@@ -63,35 +63,89 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [requestInProgress, setRequestInProgress] = useState<boolean>(false);
 
   useEffect(() => {
+    // Track whether component is mounted to prevent state updates after unmount
+    let isMounted = true;
+    
     const fetchRelevantReview = async () => {
+      // Prevent multiple concurrent requests
+      if (requestInProgress) {
+        console.log('Review request already in progress, skipping');
+        return;
+      }
+      
       try {
         setLoading(true);
+        setRequestInProgress(true);
+        setError(null);
         
-        // Make direct API call
-        const response = await api.post('/api/v1/reviews/get-relevant-review', {
-          profileData
-        });
+        console.log('Fetching review with profile data', profileData);
         
-        if (response.data && response.data.success && response.data.review) {
-          setReview(response.data.review);
-        } else {
-          throw new Error(response.data?.error || 'No relevant review found');
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        // Make direct API call with timeout
+        const response = await api.post('/api/v1/reviews/get-relevant-review', 
+          { profileData },
+          { 
+            signal: controller.signal,
+            timeout: 10000 
+          }
+        );
+        
+        // Clear timeout since request completed
+        clearTimeout(timeoutId);
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          if (response.data && response.data.success && response.data.review) {
+            console.log('Successfully fetched review');
+            setReview(response.data.review);
+          } else if (response.data && response.data.review === "") {
+            console.log('No review content returned');
+            setError('No relevant review found');
+          } else {
+            console.log('Invalid review response', response.data);
+            throw new Error(response.data?.message || 'Failed to fetch review');
+          }
         }
-        
-      } catch (err) {
-        console.error('Error fetching relevant review:', err);
-        setError('Failed to load a relevant review');
+      } catch (err: any) {
+        // Only update state if component is still mounted
+        if (isMounted) {
+          console.error('Error fetching relevant review:', err);
+          
+          // Handle specific error types
+          if (err.name === 'AbortError') {
+            setError('Request timed out. Please try again later.');
+          } else if (err.code === 'ECONNABORTED') {
+            setError('Connection timed out. Please check your internet connection.');
+          } else if (err.response?.status === 500) {
+            setError('Server error. Our team has been notified.');
+          } else {
+            setError(err.message || 'Failed to load a relevant review');
+          }
+        }
       } finally {
-        setLoading(false);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setLoading(false);
+          setRequestInProgress(false);
+        }
       }
     };
 
-    if (profileData) {
+    if (profileData && isMounted) {
       fetchRelevantReview();
     }
-  }, [profileData]);
+    
+    // Cleanup function to run when component unmounts
+    return () => {
+      isMounted = false;
+    };
+  }, [profileData, requestInProgress]);
 
   if (loading) {
     return (

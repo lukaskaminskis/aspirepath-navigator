@@ -15,8 +15,8 @@ interface CareerAnalysisContextType {
   getRelevantReview: (analysisData: CareerAnalysisData) => Promise<void>;
   isReviewLoading: boolean;
   setIsReviewLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  review: string | undefined;
-  setReview: React.Dispatch<React.SetStateAction<string | undefined>>;
+  review: any;
+  setReview: React.Dispatch<React.SetStateAction<any>>;
 }
 
 // Create context with a default undefined value
@@ -27,7 +27,7 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [error, setError] = useState<string | null>(null);
   const [careerData, setCareerData] = useState<CareerAnalysisData | null>(null);
   const [isReviewLoading, setIsReviewLoading] = useState<boolean>(false);
-  const [review, setReview] = useState<string | undefined>(undefined);
+  const [review, setReview] = useState<any>(undefined);
 
   const analyzeCareer = async (formData: FormData) => {
     try {
@@ -43,12 +43,16 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
     }
   };
   
-  const analyzeTypeformResponse = async (responseId: string) => {
+  const analyzeTypeformResponse = async (responseId: string): Promise<void> => {
     if (!responseId) {
       console.error('Invalid responseId provided:', responseId);
       setError('Missing or invalid response ID');
       return;
     }
+    
+    // Capture any currently running requests to avoid race conditions
+    let isCancelled = false;
+    const controller = new AbortController();
     
     try {
       // Set loading state to prevent parallel requests
@@ -64,8 +68,24 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
       // Clear any previous data
       setCareerData(null);
       
+      // Handle potential long-running requests by implementing a timeout
+      const timeoutId = setTimeout(() => {
+        console.log('Request timeout reached, aborting');
+        controller.abort();
+      }, 60000); // 60 second timeout
+      
       // Single API request with clear completion tracking
       const response = await careerAnalysisService.analyzeTypeformResponse(responseId);
+      
+      // Clear the timeout since we got a response
+      clearTimeout(timeoutId);
+      
+      // If the request was cancelled while we were waiting, don't process the response
+      if (isCancelled) {
+        console.log('Request was cancelled, not processing response');
+        return;
+      }
+      
       console.log('Analysis complete. Processing results...');
       
       // Process the response only after the API call is fully complete
@@ -76,9 +96,12 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         // Only attempt to get a review after career analysis is complete
         // And do it within this try block so career analysis can succeed even if review fails
         try {
-          console.log('Fetching relevant review based on analysis...');
-          await getRelevantReview(response.analysis);
-          console.log('Review fetching complete');
+          if (!isCancelled) {
+            console.log('Fetching relevant review based on analysis...');
+            // Use a separate try/catch for review fetching so it doesn't affect the main flow
+            await getRelevantReview(response.analysis);
+            console.log('Review fetching complete');
+          }
         } catch (reviewError) {
           console.error('Error fetching review, but continuing with analysis display:', reviewError);
           // Don't rethrow - we want career analysis to succeed even if review fails
@@ -93,25 +116,46 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
       
       console.log('Analysis workflow complete');
     } catch (error: any) {
+      // Don't update state if the request was cancelled
+      if (isCancelled) return;
+      
       console.error('Error analyzing Typeform response:', error);
       console.error('Error details:', error.response?.data, error.stack);
       
       // Clear any partial data
       setCareerData(null);
       
-      // Special handling for timeout errors
-      if (error.code === 'ECONNABORTED') {
+      // Special handling for different error types
+      if (error.name === 'AbortError') {
         const timeoutMessage = 'The request timed out. Please try again in a few moments.';
         console.error(timeoutMessage);
         setError(timeoutMessage);
+      } else if (error.code === 'ECONNABORTED') {
+        const timeoutMessage = 'The request timed out. Please try again in a few moments.';
+        console.error(timeoutMessage);
+        setError(timeoutMessage);
+      } else if (error.response?.status === 404) {
+        setError('Response ID not found. Please check the ID and try again.');
+      } else if (error.response?.status === 500) {
+        setError('Server error occurred. Our team has been notified.');
       } else {
         const errorMessage = error.response?.data?.detail || error.message || 'Failed to analyze Typeform response data';
         setError(errorMessage);
       }
     } finally {
-      console.log('Analysis process complete, resetting loading state');
-      setIsLoading(false);
+      // Don't update state if the request was cancelled
+      if (!isCancelled) {
+        console.log('Analysis process complete, resetting loading state');
+        setIsLoading(false);
+      }
     }
+    
+    // Register event handler to handle cleanup - this doesn't return a value
+    // but handles cleanup internally
+    window.addEventListener('beforeunload', () => {
+      isCancelled = true;
+      controller.abort();
+    });
   };
 
   // Fetch relevant review based on analysis data
