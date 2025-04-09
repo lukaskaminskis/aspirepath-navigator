@@ -22,6 +22,7 @@ import CareerPathCard from '@/components/career/CareerPathCard';
 import SchoolCard from '@/components/career/SchoolCard';
 import FaqCard from '@/components/career/FaqCard';
 import ContactForm from '@/components/career/ContactForm';
+import ReviewComponent from '@/components/career/ReviewComponent';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCareerAnalysis } from '@/contexts/CareerAnalysisContext';
 
@@ -253,103 +254,14 @@ const CareerAnalysis = () => {
                       </p>
                     </div>
                     
-                    <div className="bg-white rounded-xl shadow-md p-8">
-                      <div className="flex flex-col md:flex-row md:items-start gap-6">
-                        <div className="flex-shrink-0">
-                          <img 
-                            src="/logos/daniar-profile.jpg" 
-                            alt="Daniar Abdraiymov" 
-                            className="w-24 h-24 rounded-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = "https://ui-avatars.com/api/?name=Daniar+Abdraiymov&background=0D8ABC&color=fff";
-                            }}
-                          />
-                        </div>
-                        
-                        <div className="flex-grow">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-                            <h3 className="text-xl font-semibold text-black">Daniar Abdraiymov</h3>
-                            <span className="text-muted-foreground">Mar 11, 2025</span>
-                          </div>
-                          
-                          <div className="mb-4">
-                            <p className="text-muted-foreground">Student • Web development • Online</p>
-                            <div className="flex items-center mt-1">
-                              <div className="rounded-full bg-emerald-100 p-1 mr-2">
-                                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                              </div>
-                              <span className="text-emerald-600 text-sm font-medium">Verified by GitHub</span>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-black">Overall Experience</span>
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-black">Instructors</span>
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-black">Curriculum</span>
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-black">Job Assistance</span>
-                                <div className="flex">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <h4 className="text-lg font-medium mb-4 text-black">The best way to learn Programming</h4>
-                          
-                          <div className="space-y-4 text-gray-700">
-                            <p>
-                              Before attending Turing College, I began my journey in web development through various courses on YouTube and Udemy. Although I had the opportunity to learn programming independently, I struggled significantly without the guidance of mentors and team leads. As a beginner, I found my self-study approach to be somewhat chaotic, uncertain about what, how, and when to study.
-                            </p>
-                            <p>
-                              Turing College provided a clear, structured learning path that immediately advanced my skills as a programmer. The availability of experienced mentors, supportive staff, and knowledgeable peers has been invaluable. These mentors, who are seasoned engineers in the industry, have helped me understand how real-world projects are developed and executed.
-                            </p>
-                            <p>
-                              Regardless of your background, I highly recommend Turing College. You will benefit from a supportive community, access to an excellent learning platform, and opportunities to network with remarkable individuals.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <ReviewComponent profileData={{
+                      skills: careerData.skillsToImprove.map(skill => skill.skill),
+                      experience: [],
+                      education: [],
+                      interests: [],
+                      course_interest: careerData.recommendedCareerPaths[0]?.title || "",
+                      program: careerData.recommendedCareerPaths[0]?.title || ""
+                    }} />
                   </div>
                 </div>
               </section>

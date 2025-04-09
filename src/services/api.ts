@@ -126,6 +126,33 @@ const contactService = {
   },
 };
 
-export { careerAnalysisService, contactService };
+// Reviews service
+const reviewsService = {
+  /**
+   * Get a relevant review based on profile data
+   * @param profileData - User profile data extracted from CV
+   */
+  getRelevantReview: async (profileData: any): Promise<any> => {
+    try {
+      const response = await api({
+        method: 'POST',
+        url: '/api/v1/reviews/get-relevant-review',
+        data: { profileData },
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error getting relevant review:', error);
+      throw error;
+    }
+  },
+};
+
+export { careerAnalysisService, contactService, reviewsService };
 
 export default api; 
