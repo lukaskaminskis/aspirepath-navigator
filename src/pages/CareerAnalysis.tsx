@@ -31,15 +31,37 @@ const CareerAnalysis = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [typeformResponseId, setTypeformResponseId] = useState<string | null>(null);
-  const { isLoading, error, careerData, analyzeTypeformResponse } = useCareerAnalysis();
+  const { 
+    isLoading, 
+    error, 
+    careerData, 
+    analyzeTypeformResponse,
+    getRelevantReview 
+  } = useCareerAnalysis();
   
   // Use refs to track analysis state
   const analysisStartedRef = useRef<boolean>(false);
   const responseIdRef = useRef<string | null>(null);
+  const reviewLoadedRef = useRef<boolean>(false);
   
   // Get responseId from URL params if available
   const { responseId } = useParams<{ responseId?: string }>();
   const navigate = useNavigate();
+  
+  // Fix for scrolling issues - ensure body is scrollable
+  useEffect(() => {
+    // Enable scrolling
+    document.body.style.overflow = 'auto';
+    document.body.style.position = 'static';
+    document.body.style.height = 'auto';
+    
+    return () => {
+      // Reset on unmount
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.height = '';
+    };
+  }, []);
   
   // Set initial state from URL parameters
   useEffect(() => {
@@ -56,8 +78,17 @@ const CareerAnalysis = () => {
   useEffect(() => {
     if (careerData) {
       console.log('automationRiskInsight value:', careerData.automationRiskInsight);
+      
+      // Explicitly load review when career data is available
+      if (!reviewLoadedRef.current) {
+        console.log('Explicitly triggering review loading for career data');
+        reviewLoadedRef.current = true;
+        getRelevantReview(careerData).catch(err => {
+          console.error('Error loading review:', err);
+        });
+      }
     }
-  }, [careerData]);
+  }, [careerData, getRelevantReview]);
 
   // Handle analysis lifecycle
   useEffect(() => {
@@ -74,6 +105,7 @@ const CareerAnalysis = () => {
     // Mark that we've started analysis and store the responseId
     analysisStartedRef.current = true;
     responseIdRef.current = typeformResponseId;
+    reviewLoadedRef.current = false; // Reset review loaded flag
     
     console.log('Starting analysis for response ID:', typeformResponseId);
     
@@ -93,7 +125,7 @@ const CareerAnalysis = () => {
       console.log('Component unmounting during analysis');
       // No need to reset the analysisStartedRef here to avoid repeated api calls
     };
-  }, [typeformResponseId, showAnalysis]); // Don't include analyzeTypeformResponse in deps
+  }, [typeformResponseId, showAnalysis, analyzeTypeformResponse]);
 
   const handleTypeformSubmit = (responseId: string) => {
     setTypeformResponseId(responseId);

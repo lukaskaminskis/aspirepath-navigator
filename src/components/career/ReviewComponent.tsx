@@ -50,6 +50,9 @@ interface ReviewComponentProps {
 // This is outside the component to avoid being recreated
 const globalReviewCache = new Map<string, {review: Review | null, error: string | null}>();
 
+// For debugging purposes
+console.log("ReviewComponent module loaded, cache size:", globalReviewCache.size);
+
 // Helper function to render stars
 const renderStars = (count: number) => {
   const stars = [];
@@ -67,6 +70,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Use refs to keep stable references across re-renders
   const controllerRef = useRef<AbortController | null>(null);
@@ -80,6 +84,15 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
     return `${program}-${skills}`;
   }, [profileData]);
   
+  // Log mounting for debugging
+  useEffect(() => {
+    console.log("ReviewComponent mounted with key:", cacheKey);
+    
+    return () => {
+      console.log("ReviewComponent unmounted with key:", cacheKey);
+    };
+  }, [cacheKey]);
+  
   useEffect(() => {
     // Set mounted flag to true when component mounts
     isMountedRef.current = true;
@@ -88,11 +101,13 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
     if (!profileData) {
       setLoading(false);
       setError('No profile data available');
+      setDebugInfo('No profile data available');
       return;
     }
     
     // Skip if already attempted in this component
     if (hasAttemptedRef.current) {
+      setDebugInfo('Request already attempted in this instance');
       return;
     }
     
@@ -105,16 +120,22 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
       setReview(cachedResult.review);
       setError(cachedResult.error);
       setLoading(false);
+      setDebugInfo('Retrieved from cache');
+      console.log("Review loaded from cache for key:", cacheKey);
       return;
     }
+    
+    setDebugInfo('Fetching from API...');
+    console.log("Fetching review from API for key:", cacheKey);
     
     // Set up controller for this request
     controllerRef.current = new AbortController();
     const timeoutId = setTimeout(() => {
       if (controllerRef.current) {
         controllerRef.current.abort();
+        console.log("Review request timed out for key:", cacheKey);
       }
-    }, 10000);
+    }, 15000); // Increased timeout to 15 seconds
     
     const fetchReview = async () => {
       try {
@@ -123,23 +144,30 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
         
         setLoading(true);
         
+        // Clone the profile data to avoid any reference issues
+        const profileDataClone = JSON.parse(JSON.stringify(profileData));
+        
         const response = await api.post('/api/v1/reviews/get-relevant-review', 
-          { profileData },
+          { profileData: profileDataClone },
           { 
             signal: controllerRef.current?.signal,
-            timeout: 10000 
+            timeout: 15000 
           }
         );
         
         // Only update state if component is still mounted
         if (isMountedRef.current) {
           if (response.data && response.data.success && response.data.review) {
+            console.log("Review fetched successfully for key:", cacheKey);
             const result = { review: response.data.review, error: null };
             setReview(result.review);
+            setDebugInfo('Review loaded successfully');
             globalReviewCache.set(cacheKey, result);
           } else {
+            console.log("No relevant review found for key:", cacheKey);
             const result = { review: null, error: 'No relevant review found' };
             setError(result.error);
+            setDebugInfo('No relevant review found');
             globalReviewCache.set(cacheKey, result);
           }
         }
@@ -156,7 +184,9 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
             errorMessage = 'Server error. Our team has been notified.';
           }
           
+          console.error("Error fetching review for key:", cacheKey, err);
           setError(errorMessage);
+          setDebugInfo(`Error: ${errorMessage}`);
           
           // Cache the error result
           globalReviewCache.set(cacheKey, { 
@@ -191,7 +221,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
       // Clear timeout
       clearTimeout(timeoutId);
     };
-  }, [cacheKey]); // Only depends on the cache key, not the entire profile data
+  }, [cacheKey, profileData]); // Added profileData back to dependencies to ensure updates
 
   if (loading) {
     return (

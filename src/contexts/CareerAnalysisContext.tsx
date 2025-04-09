@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { CareerAnalysisData } from '@/types/career';
 import api from '@/services/api';
-import { careerAnalysisService, reviewsService } from '@/services/api';
+import { careerAnalysisService } from '@/services/api';
 
 // Define the shape of the context
 interface CareerAnalysisContextType {
@@ -117,28 +117,18 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
 
   // Fetch relevant review based on analysis data
   const getRelevantReview = async (analysisData: CareerAnalysisData) => {
+    if (!analysisData || !analysisData.recommendedCareerPaths || analysisData.recommendedCareerPaths.length === 0) {
+      console.error('No valid analysis data for review');
+      return;
+    }
+    
     // Prevent multiple calls at once
     if (isReviewLoading) {
+      console.log('Already loading review, skipping');
       return;
     }
     
-    // Limit to one attempt per component session
-    const attemptKey = JSON.stringify(
-      analysisData.recommendedCareerPaths[0]?.title || "default"
-    );
-    
-    // Use a static Set to track attempts
-    if (!getRelevantReview._attemptedKeys) {
-      getRelevantReview._attemptedKeys = new Set();
-    }
-    
-    // Skip if we've already tried this exact analysis
-    if (getRelevantReview._attemptedKeys.has(attemptKey)) {
-      return;
-    }
-    
-    // Mark this analysis as attempted
-    getRelevantReview._attemptedKeys.add(attemptKey);
+    console.log('Starting review retrieval for analysis data');
     
     try {
       setIsReviewLoading(true);
@@ -158,36 +148,38 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         program
       };
       
-      // Add timeout protection
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      console.log('Calling review service with profile data:', JSON.stringify(profileData));
       
+      // Call the review service directly
       try {
-        const response = await reviewsService.getRelevantReview(profileData);
+        // Use direct API call instead of reviewsService for better control
+        const response = await api.post('/api/v1/reviews/get-relevant-review', 
+          { profileData },
+          { timeout: 15000 }
+        );
+        
+        console.log('Review service response:', response.data);
         
         // Check if response has a review property before setting it
-        if (response && response.success !== false && response.review) {
-          setReview(response.review);
+        if (response.data && response.data.review) {
+          console.log('Setting review from API response');
+          setReview(response.data.review);
         } else {
+          console.log('No valid review in response');
           setReview(undefined);
         }
       } catch (error) {
-        // Continue without a review - don't block the analysis display
+        console.error('Error calling review service:', error);
         setReview(undefined);
-      } finally {
-        clearTimeout(timeoutId);
       }
     } catch (error) {
-      // Continue without a review - don't block the analysis display
+      console.error('Error in getRelevantReview:', error);
       setReview(undefined);
     } finally {
-      // Always reset loading state to prevent UI getting stuck
+      console.log('Review loading complete');
       setIsReviewLoading(false);
     }
   };
-
-  // Static property to track attempts
-  getRelevantReview._attemptedKeys = new Set();
 
   return (
     <CareerAnalysisContext.Provider
