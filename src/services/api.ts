@@ -7,8 +7,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const api = axios.create({
   baseURL: API_URL,
   // Remove default Content-Type as it will be set per request
-  // Set a longer timeout for the API calls
-  timeout: 30000,
+  // Set a longer timeout for the API calls (increased from 30s to 2 minutes)
+  timeout: 120000,
   // Enable credentials for CORS
   withCredentials: true
 });
@@ -80,7 +80,7 @@ const careerAnalysisService = {
    * Analyze career using Typeform response data
    * @param responseId - Typeform response ID to analyze
    */
-  analyzeTypeformResponse: async (responseId: string): Promise<{success: boolean, response_id: string, analysis: CareerAnalysisData}> => {
+  analyzeTypeformResponse: async (responseId: string, retryCount = 0): Promise<{success: boolean, response_id: string, analysis: CareerAnalysisData}> => {
     try {
       console.log('Analyzing Typeform response with ID:', responseId);
       
@@ -92,6 +92,8 @@ const careerAnalysisService = {
         method: 'POST',
         url: url,
         withCredentials: true,
+        // Set an even longer timeout for this specific operation (3 minutes)
+        timeout: 180000,
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
@@ -100,11 +102,18 @@ const careerAnalysisService = {
       
       console.log('Received Typeform analysis response:', response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing Typeform response:', error);
       console.error('Error details:', error.response?.data);
       console.error('Error status:', error.response?.status);
       console.error('Error headers:', error.response?.headers);
+      
+      // Implement automatic retry logic for timeout errors
+      if (error.code === 'ECONNABORTED' && retryCount < 2) {
+        console.log(`Request timed out. Retrying (${retryCount + 1}/2)...`);
+        return careerAnalysisService.analyzeTypeformResponse(responseId, retryCount + 1);
+      }
+      
       throw error;
     }
   },

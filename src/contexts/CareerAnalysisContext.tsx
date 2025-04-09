@@ -68,8 +68,16 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
     } catch (error: any) {
       console.error('Error analyzing Typeform response:', error);
       console.error('Error details:', error.response?.data, error.stack);
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to analyze Typeform response data';
-      setError(errorMessage);
+      
+      // Special handling for timeout errors
+      if (error.code === 'ECONNABORTED') {
+        const timeoutMessage = 'The request timed out. Your analysis is processing but taking longer than expected. Please wait a moment and refresh the page to see if your analysis is complete.';
+        console.error(timeoutMessage);
+        setError(timeoutMessage);
+      } else {
+        const errorMessage = error.response?.data?.detail || error.message || 'Failed to analyze Typeform response data';
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
