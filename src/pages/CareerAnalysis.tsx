@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -54,12 +54,23 @@ const CareerAnalysis = () => {
     document.body.style.overflow = 'auto';
     document.body.style.position = 'static';
     document.body.style.height = 'auto';
+    document.documentElement.style.height = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    
+    // Find any elements with fixed positioning and adjust them
+    document.querySelectorAll('div[style*="position: fixed"]').forEach(el => {
+      if (el instanceof HTMLElement) {
+        el.style.position = 'absolute';
+      }
+    });
     
     return () => {
       // Reset on unmount
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.height = '';
+      document.documentElement.style.height = '';
+      document.documentElement.style.overflow = '';
     };
   }, []);
   
@@ -144,6 +155,19 @@ const CareerAnalysis = () => {
     setIsLoaded(false);
     window.location.href = '/career-analysis';
   };
+
+  // Check if we're seeing mock data
+  const isMockData = useMemo(() => {
+    if (!careerData) return false;
+    
+    // The mock data always has these exact values
+    return (
+      careerData.automationRiskScore === 6 &&
+      careerData.automationRiskInsight === "While your core role is safe, 35% of your daily tasks could be automated in the next 18 months." &&
+      careerData.recommendedCareerPaths.some(path => path.title === "Data Analytics Manager") &&
+      careerData.recommendedCareerPaths.some(path => path.title === "AI Implementation Specialist")
+    );
+  }, [careerData]);
 
   return (
     <PageLayout>
@@ -359,7 +383,9 @@ const CareerAnalysis = () => {
                       education: [],
                       interests: [],
                       course_interest: careerData.recommendedCareerPaths[0]?.title || "",
-                      program: careerData.recommendedCareerPaths[0]?.title || ""
+                      program: careerData.recommendedCareerPaths[0]?.title || "",
+                      // Add a flag to indicate this is mock data for styling
+                      is_mock_data: isMockData 
                     }} 
                   />
                 )}
