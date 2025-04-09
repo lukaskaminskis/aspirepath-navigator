@@ -225,6 +225,19 @@ const reviewsService = {
    * @param profileData - User profile data extracted from CV
    */
   getRelevantReview: async (profileData: any): Promise<any> => {
+    // Use in-memory cache to prevent repeated calls with same data
+    const cacheKey = JSON.stringify(profileData);
+    // Static variable to store previously failed requests
+    if (!reviewsService._failedRequests) {
+      reviewsService._failedRequests = new Set();
+    }
+    
+    // If this exact request has failed before, don't retry
+    if (reviewsService._failedRequests.has(cacheKey)) {
+      console.log('Skipping previously failed review request');
+      return { success: false, review: null, message: 'Previous attempt failed' };
+    }
+
     try {
       // Create a unique ID based on a hash of the profileData
       const requestId = `get-review-${JSON.stringify(profileData).length}`;
@@ -244,11 +257,17 @@ const reviewsService = {
       
       return response.data;
     } catch (error) {
-      console.error('Error getting relevant review:', error);
+      // Only log once and mark this request as failed
+      console.error('Error getting relevant review - will not retry for this profile');
+      reviewsService._failedRequests.add(cacheKey);
+      
       // Return a fallback empty response to prevent endless retries
-      return { success: false, review: '', message: 'Failed to fetch review' };
+      return { success: false, review: null, message: 'Failed to fetch review' };
     }
   },
+  
+  // Property to store failed request patterns
+  _failedRequests: new Set<string>()
 };
 
 // Helper function for delay

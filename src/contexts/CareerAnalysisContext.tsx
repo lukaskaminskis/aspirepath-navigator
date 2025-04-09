@@ -166,6 +166,25 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
       return;
     }
     
+    // Limit to one attempt per component session
+    const attemptKey = JSON.stringify(
+      analysisData.recommendedCareerPaths[0]?.title || "default"
+    );
+    
+    // Use a static Set to track attempts
+    if (!getRelevantReview._attemptedKeys) {
+      getRelevantReview._attemptedKeys = new Set();
+    }
+    
+    // Skip if we've already tried this exact analysis
+    if (getRelevantReview._attemptedKeys.has(attemptKey)) {
+      console.log('Already attempted to get review for this analysis, skipping');
+      return;
+    }
+    
+    // Mark this analysis as attempted
+    getRelevantReview._attemptedKeys.add(attemptKey);
+    
     try {
       setIsReviewLoading(true);
       const strengths = analysisData.strengths.map(s => s.strength);
@@ -184,7 +203,16 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         program
       };
       
-      const response = await reviewsService.getRelevantReview(profileData);
+      // Add timeout protection
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Review request timed out')), 8000);
+      });
+      
+      // Race between the actual request and the timeout
+      const response = await Promise.race([
+        reviewsService.getRelevantReview(profileData),
+        timeoutPromise
+      ]) as any;
       
       // Check if response has a review property before setting it
       if (response && response.success !== false && response.review) {
@@ -195,7 +223,7 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         setReview(undefined);
       }
     } catch (error) {
-      console.error('Error fetching relevant review:', error);
+      console.error('Error fetching relevant review - will not retry');
       // Continue without a review - don't block the analysis display
       setReview(undefined);
     } finally {
@@ -203,6 +231,9 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
       setIsReviewLoading(false);
     }
   };
+
+  // Static property to track attempts
+  getRelevantReview._attemptedKeys = new Set();
 
   return (
     <CareerAnalysisContext.Provider

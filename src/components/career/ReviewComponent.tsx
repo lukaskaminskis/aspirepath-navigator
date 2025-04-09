@@ -64,12 +64,19 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [requestInProgress, setRequestInProgress] = useState<boolean>(false);
+  const [requestAttempted, setRequestAttempted] = useState<boolean>(false);
 
   useEffect(() => {
     // Track whether component is mounted to prevent state updates after unmount
     let isMounted = true;
     
     const fetchRelevantReview = async () => {
+      // Only try once per component lifecycle
+      if (requestAttempted) {
+        console.log('Review already attempted for this component instance, not retrying');
+        return;
+      }
+      
       // Prevent multiple concurrent requests
       if (requestInProgress) {
         console.log('Review request already in progress, skipping');
@@ -79,9 +86,11 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
       try {
         setLoading(true);
         setRequestInProgress(true);
+        // Mark as attempted immediately to prevent retry loops
+        setRequestAttempted(true);
         setError(null);
         
-        console.log('Fetching review with profile data', profileData);
+        console.log('Fetching review with profile data');
         
         // Add timeout to prevent hanging requests
         const controller = new AbortController();
@@ -108,14 +117,14 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
             console.log('No review content returned');
             setError('No relevant review found');
           } else {
-            console.log('Invalid review response', response.data);
-            throw new Error(response.data?.message || 'Failed to fetch review');
+            console.log('Invalid review response');
+            throw new Error('Failed to fetch review');
           }
         }
       } catch (err: any) {
         // Only update state if component is still mounted
         if (isMounted) {
-          console.error('Error fetching relevant review:', err);
+          console.error('Error fetching relevant review - will not retry');
           
           // Handle specific error types
           if (err.name === 'AbortError') {
@@ -125,7 +134,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
           } else if (err.response?.status === 500) {
             setError('Server error. Our team has been notified.');
           } else {
-            setError(err.message || 'Failed to load a relevant review');
+            setError('Failed to load a relevant review');
           }
         }
       } finally {
@@ -137,7 +146,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
       }
     };
 
-    if (profileData && isMounted) {
+    if (profileData && isMounted && !requestAttempted) {
       fetchRelevantReview();
     }
     
@@ -145,7 +154,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
     return () => {
       isMounted = false;
     };
-  }, [profileData, requestInProgress]);
+  }, [profileData, requestInProgress, requestAttempted]);
 
   if (loading) {
     return (
