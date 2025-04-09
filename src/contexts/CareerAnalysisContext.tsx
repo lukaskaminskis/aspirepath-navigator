@@ -46,113 +46,69 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
   
   const analyzeTypeformResponse = async (responseId: string): Promise<void> => {
     if (!responseId) {
-      console.error('Invalid responseId provided:', responseId);
       setError('Missing or invalid response ID');
       return;
     }
     
-    // Capture any currently running requests to avoid race conditions
-    let isCancelled = false;
+    // Prevent processing if already loading
+    if (isLoading) {
+      return;
+    }
+    
+    // Create an abort controller for this request
     const controller = new AbortController();
+    let isCancelled = false;
     
     try {
-      // Set loading state to prevent parallel requests
-      if (isLoading) {
-        console.log('Analysis already in progress, not starting a new request');
-        return;
-      }
-      
       setIsLoading(true);
       setError(null);
-      console.log('Starting Typeform response analysis:', responseId);
-      
-      // Clear any previous data
       setCareerData(null);
       
-      // Handle potential long-running requests by implementing a timeout
+      // Add timeout protection
       const timeoutId = setTimeout(() => {
-        console.log('Request timeout reached, aborting');
         controller.abort();
       }, 60000); // 60 second timeout
       
-      // Single API request with clear completion tracking
+      // Make API request with simple error handling
       const response = await careerAnalysisService.analyzeTypeformResponse(responseId);
       
-      // Clear the timeout since we got a response
+      // Clean up timeout
       clearTimeout(timeoutId);
       
-      // If the request was cancelled while we were waiting, don't process the response
-      if (isCancelled) {
-        console.log('Request was cancelled, not processing response');
-        return;
-      }
-      
-      console.log('Analysis complete. Processing results...');
-      
-      // Process the response only after the API call is fully complete
-      if (response && response.analysis) {
-        console.log('Analysis data received successfully');
-        setCareerData(response.analysis);
-        
-        // Only attempt to get a review after career analysis is complete
-        // And do it within this try block so career analysis can succeed even if review fails
-        try {
-          if (!isCancelled) {
-            console.log('Fetching relevant review based on analysis...');
-            // Use a separate try/catch for review fetching so it doesn't affect the main flow
-            await getRelevantReview(response.analysis);
-            console.log('Review fetching complete');
-          }
-        } catch (reviewError) {
-          console.error('Error fetching review, but continuing with analysis display:', reviewError);
-          // Don't rethrow - we want career analysis to succeed even if review fails
-        }
-      } else if (response && response.success === false) {
-        console.error('API returned success: false', response);
-        throw new Error(response.error || 'Failed to analyze your response');
-      } else {
-        console.error('Invalid response structure:', response);
-        throw new Error('Invalid response data structure. This may be a temporary issue. Please try again later.');
-      }
-      
-      console.log('Analysis workflow complete');
-    } catch (error: any) {
-      // Don't update state if the request was cancelled
+      // Don't process if cancelled
       if (isCancelled) return;
       
-      console.error('Error analyzing Typeform response:', error);
-      console.error('Error details:', error.response?.data, error.stack);
+      // Process successful response
+      if (response && response.analysis) {
+        setCareerData(response.analysis);
+      } else if (response && response.success === false) {
+        throw new Error(response.error || 'Failed to analyze your response');
+      } else {
+        throw new Error('Invalid response data structure. This may be a temporary issue. Please try again later.');
+      }
+    } catch (error: any) {
+      if (isCancelled) return;
       
-      // Clear any partial data
+      // Clean up any partial data
       setCareerData(null);
       
-      // Special handling for different error types
-      if (error.name === 'AbortError') {
-        const timeoutMessage = 'The request timed out. Please try again in a few moments.';
-        console.error(timeoutMessage);
-        setError(timeoutMessage);
-      } else if (error.code === 'ECONNABORTED') {
-        const timeoutMessage = 'The request timed out. Please try again in a few moments.';
-        console.error(timeoutMessage);
-        setError(timeoutMessage);
+      // Set appropriate error message based on error type
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        setError('The request timed out. Please try again in a few moments.');
       } else if (error.response?.status === 404) {
         setError('Response ID not found. Please check the ID and try again.');
       } else if (error.response?.status === 500) {
         setError('Server error occurred. Our team has been notified.');
       } else {
-        const errorMessage = error.response?.data?.detail || error.message || 'Failed to analyze Typeform response data';
-        setError(errorMessage);
+        setError(error.response?.data?.detail || error.message || 'Failed to analyze Typeform response data');
       }
     } finally {
-      // Don't update state if the request was cancelled
       if (!isCancelled) {
-        console.log('Analysis process complete, resetting loading state');
         setIsLoading(false);
       }
     }
     
-    // Register event handler to handle cleanup - this doesn't return a value
-    // but handles cleanup internally
+    // Handle cleanup on page navigation/reload
     window.addEventListener('beforeunload', () => {
       isCancelled = true;
       controller.abort();

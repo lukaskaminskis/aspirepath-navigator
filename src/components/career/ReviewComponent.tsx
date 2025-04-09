@@ -46,6 +46,10 @@ interface ReviewComponentProps {
   profileData: ProfileData;
 }
 
+// Create a global cache for reviews that persists between renders
+// This is outside the component to avoid being recreated
+const globalReviewCache = new Map<string, {review: Review | null, error: string | null}>();
+
 // Helper function to render stars
 const renderStars = (count: number) => {
   const stars = [];
@@ -59,10 +63,6 @@ const renderStars = (count: number) => {
   return stars;
 };
 
-// Use a WeakMap to track which profile data has already been processed
-// This persists between component mounts but garbage collects when objects are no longer referenced
-const processedProfiles = new WeakMap();
-
 const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -71,33 +71,37 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
   // Use refs to keep stable references across re-renders
   const controllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef<boolean>(true);
-  const profileDataRef = useRef<ProfileData | null>(null);
+  const hasAttemptedRef = useRef<boolean>(false);
 
-  // Create a stable key for this profile data to identify it across renders
-  const profileKey = useMemo(() => {
+  // Create a stable profile key for caching based on important profile properties
+  const cacheKey = useMemo(() => {
     const program = profileData?.program || profileData?.course_interest || '';
-    const skills = profileData?.skills?.join(',') || '';
+    const skills = profileData?.skills?.slice(0, 3)?.join(',') || '';
     return `${program}-${skills}`;
   }, [profileData]);
   
   useEffect(() => {
-    // Store the current profile data
-    profileDataRef.current = profileData;
+    // Set mounted flag to true when component mounts
+    isMountedRef.current = true;
     
-    // Ensure we have profile data
+    // Skip if no profile data
     if (!profileData) {
       setLoading(false);
       setError('No profile data available');
       return;
     }
     
-    // Set mounted flag to true when component mounts
-    isMountedRef.current = true;
+    // Skip if already attempted in this component
+    if (hasAttemptedRef.current) {
+      return;
+    }
     
-    // Check if we've already processed this exact profile data before
-    if (processedProfiles.has(profileData)) {
-      // We've already tried to fetch a review for this exact profile
-      const cachedResult = processedProfiles.get(profileData);
+    // Mark as attempted so we don't try again
+    hasAttemptedRef.current = true;
+    
+    // Check global cache first
+    if (globalReviewCache.has(cacheKey)) {
+      const cachedResult = globalReviewCache.get(cacheKey)!;
       setReview(cachedResult.review);
       setError(cachedResult.error);
       setLoading(false);
@@ -130,19 +134,13 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
         // Only update state if component is still mounted
         if (isMountedRef.current) {
           if (response.data && response.data.success && response.data.review) {
-            setReview(response.data.review);
-            // Cache successful results
-            processedProfiles.set(profileData, { 
-              review: response.data.review, 
-              error: null 
-            });
+            const result = { review: response.data.review, error: null };
+            setReview(result.review);
+            globalReviewCache.set(cacheKey, result);
           } else {
-            setError('No relevant review found');
-            // Cache failed results too
-            processedProfiles.set(profileData, { 
-              review: null, 
-              error: 'No relevant review found' 
-            });
+            const result = { review: null, error: 'No relevant review found' };
+            setError(result.error);
+            globalReviewCache.set(cacheKey, result);
           }
         }
       } catch (err: any) {
@@ -161,7 +159,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
           setError(errorMessage);
           
           // Cache the error result
-          processedProfiles.set(profileData, { 
+          globalReviewCache.set(cacheKey, { 
             review: null, 
             error: errorMessage 
           });
@@ -193,7 +191,7 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
       // Clear timeout
       clearTimeout(timeoutId);
     };
-  }, [profileKey]); // Only re-run if the profileKey changes
+  }, [cacheKey]); // Only depends on the cache key, not the entire profile data
 
   if (loading) {
     return (

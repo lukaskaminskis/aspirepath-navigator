@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -33,10 +33,15 @@ const CareerAnalysis = () => {
   const [typeformResponseId, setTypeformResponseId] = useState<string | null>(null);
   const { isLoading, error, careerData, analyzeTypeformResponse } = useCareerAnalysis();
   
+  // Use refs to track analysis state
+  const analysisStartedRef = useRef<boolean>(false);
+  const responseIdRef = useRef<string | null>(null);
+  
   // Get responseId from URL params if available
   const { responseId } = useParams<{ responseId?: string }>();
   const navigate = useNavigate();
   
+  // Set initial state from URL parameters
   useEffect(() => {
     setIsLoaded(true);
     
@@ -47,29 +52,48 @@ const CareerAnalysis = () => {
     }
   }, [responseId]);
 
+  // Log automation risk insight when it's available
   useEffect(() => {
     if (careerData) {
       console.log('automationRiskInsight value:', careerData.automationRiskInsight);
     }
   }, [careerData]);
 
+  // Handle analysis lifecycle
   useEffect(() => {
-    // If we have a typeform response ID and the analysis display is active,
-    // trigger the analysis process
-    if (typeformResponseId && showAnalysis) {
-      console.log('Starting analysis for response ID:', typeformResponseId);
-      
-      // Call the analyze function directly - it now handles its own cleanup
-      analyzeTypeformResponse(typeformResponseId).catch(err => {
-        console.error('Error in typeform analysis:', err);
-      });
-      
-      // Handle component unmount - no specific cleanup needed now
-      return () => {
-        console.log('Component unmounting during analysis');
-      };
+    // Only proceed if we have a responseId and should show analysis
+    if (!typeformResponseId || !showAnalysis) {
+      return;
     }
-  }, [typeformResponseId, showAnalysis, analyzeTypeformResponse]);
+    
+    // Skip if we've already started analysis for this responseId
+    if (analysisStartedRef.current && responseIdRef.current === typeformResponseId) {
+      return;
+    }
+    
+    // Mark that we've started analysis and store the responseId
+    analysisStartedRef.current = true;
+    responseIdRef.current = typeformResponseId;
+    
+    console.log('Starting analysis for response ID:', typeformResponseId);
+    
+    // Start analysis and handle errors
+    const startAnalysis = async () => {
+      try {
+        await analyzeTypeformResponse(typeformResponseId);
+      } catch (err) {
+        console.error('Error in typeform analysis:', err);
+      }
+    };
+    
+    startAnalysis();
+    
+    // Cleanup function
+    return () => {
+      console.log('Component unmounting during analysis');
+      // No need to reset the analysisStartedRef here to avoid repeated api calls
+    };
+  }, [typeformResponseId, showAnalysis]); // Don't include analyzeTypeformResponse in deps
 
   const handleTypeformSubmit = (responseId: string) => {
     setTypeformResponseId(responseId);
