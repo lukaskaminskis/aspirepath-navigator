@@ -46,73 +46,39 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
   
   const analyzeTypeformResponse = async (responseId: string): Promise<void> => {
     if (!responseId) {
-      setError('Missing or invalid response ID');
+      setError('No response ID provided');
       return;
     }
     
-    // Prevent processing if already loading
-    if (isLoading) {
-      return;
-    }
-    
-    // Create an abort controller for this request
-    const controller = new AbortController();
-    let isCancelled = false;
+    setIsLoading(true);
+    setError(null);
     
     try {
-      setIsLoading(true);
-      setError(null);
-      setCareerData(null);
+      console.log('Analyzing typeform response with ID:', responseId);
+      const result = await careerAnalysisService.analyzeTypeformResponse(responseId);
       
-      // Add timeout protection
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 60000); // 60 second timeout
-      
-      // Make API request with simple error handling
-      const response = await careerAnalysisService.analyzeTypeformResponse(responseId);
-      
-      // Clean up timeout
-      clearTimeout(timeoutId);
-      
-      // Don't process if cancelled
-      if (isCancelled) return;
-      
-      // Process successful response
-      if (response && response.analysis) {
-        setCareerData(response.analysis);
-      } else if (response && response.success === false) {
-        throw new Error(response.error || 'Failed to analyze your response');
+      if (result.success && result.analysis) {
+        // Direct assignment of the returned analysis data
+        setCareerData(result.analysis);
+        console.log('Career analysis data set:', result.analysis);
+        
+        // Check if we have real data or mock data
+        const isMockData = result.analysis.hasOwnProperty('is_mock_data') || false;
+        if (isMockData) {
+          console.warn('Using mock data - backend returned fallback data');
+        } else {
+          console.log('Using real analysis data from backend');
+        }
       } else {
-        throw new Error('Invalid response data structure. This may be a temporary issue. Please try again later.');
+        setError(result.error || 'Error analyzing Typeform response');
+        console.error('API error:', result.error);
       }
-    } catch (error: any) {
-      if (isCancelled) return;
-      
-      // Clean up any partial data
-      setCareerData(null);
-      
-      // Set appropriate error message based on error type
-      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
-        setError('The request timed out. Please try again in a few moments.');
-      } else if (error.response?.status === 404) {
-        setError('Response ID not found. Please check the ID and try again.');
-      } else if (error.response?.status === 500) {
-        setError('Server error occurred. Our team has been notified.');
-      } else {
-        setError(error.response?.data?.detail || error.message || 'Failed to analyze Typeform response data');
-      }
+    } catch (err: any) {
+      console.error('Error analyzing typeform:', err);
+      setError(err.message || 'Failed to analyze your responses. Please try again.');
     } finally {
-      if (!isCancelled) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-    
-    // Handle cleanup on page navigation/reload
-    window.addEventListener('beforeunload', () => {
-      isCancelled = true;
-      controller.abort();
-    });
   };
 
   // Fetch relevant review based on analysis data

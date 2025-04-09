@@ -6,6 +6,7 @@ declare module '@/services/mockData' {
 declare module '@/services/api' {
   export const careerAnalysisService: {
     analyzeCareer: (formData: FormData) => Promise<any>;
+    analyzeTypeformResponse: (responseId: string) => Promise<any>;
   };
   
   const api: any;
