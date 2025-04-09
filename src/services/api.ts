@@ -10,7 +10,7 @@ const api = axios.create({
   // Set a longer timeout for the API calls (increased from 30s to 2 minutes)
   timeout: 120000,
   // Enable credentials for CORS
-  withCredentials: true
+  withCredentials: false
 });
 
 // Add a response interceptor
@@ -61,7 +61,6 @@ const careerAnalysisService = {
         method: 'POST',
         url: '/api/v1/career/analyze',
         data: formData,
-        withCredentials: true,
         headers: {
           Accept: 'application/json',
         }
@@ -91,7 +90,7 @@ const careerAnalysisService = {
       const response = await api({
         method: 'POST',
         url: url,
-        withCredentials: true,
+        // Removed withCredentials to fix CORS issue
         // Set an even longer timeout for this specific operation (3 minutes)
         timeout: 180000,
         headers: {
@@ -128,7 +127,6 @@ const careerAnalysisService = {
         method: 'POST',
         url: '/api/v1/vectorstore/setup-vectorstore',
         data: formData,
-        withCredentials: true,
         headers: {
           Accept: 'application/json',
         }
@@ -157,7 +155,6 @@ const contactService = {
         method: 'POST',
         url: '/api/v1/contact/submit',
         data: formData,
-        withCredentials: true,
         headers: {
           Accept: 'application/json',
         }
@@ -183,7 +180,6 @@ const reviewsService = {
         method: 'POST',
         url: '/api/v1/reviews/get-relevant-review',
         data: { profileData },
-        withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
