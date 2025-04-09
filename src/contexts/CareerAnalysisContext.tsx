@@ -1,6 +1,6 @@
-import React, { createContext, useState, ReactNode, useContext } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { CareerAnalysisData } from '@/types/career';
-import { careerAnalysisService, CareerAnalysisServiceType } from '@/services/api';
+import { careerAnalysisService, reviewsService } from '@/services/api';
 
 // Define the shape of the context
 interface CareerAnalysisContextType {
@@ -12,6 +12,11 @@ interface CareerAnalysisContextType {
   setCareerData: React.Dispatch<React.SetStateAction<CareerAnalysisData | null>>;
   analyzeCareer: (formData: FormData) => Promise<void>;
   analyzeTypeformResponse: (responseId: string) => Promise<void>;
+  getRelevantReview: (analysisData: CareerAnalysisData) => Promise<void>;
+  isReviewLoading: boolean;
+  setIsReviewLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  review: string | undefined;
+  setReview: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
 // Create context with a default undefined value
@@ -21,6 +26,8 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [careerData, setCareerData] = useState<CareerAnalysisData | null>(null);
+  const [isReviewLoading, setIsReviewLoading] = useState<boolean>(false);
+  const [review, setReview] = useState<string | undefined>(undefined);
 
   const analyzeCareer = async (formData: FormData) => {
     try {
@@ -44,20 +51,38 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
     }
     
     try {
+      // Set loading state to prevent parallel requests
+      if (isLoading) {
+        console.log('Analysis already in progress, not starting a new request');
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
-      console.log('Analyzing Typeform response:', responseId);
+      console.log('Starting Typeform response analysis:', responseId);
       
-      // Add additional logging to trace the API call
-      console.log('Making API request to:', `/api/v1/typeform/analyze/${responseId}`);
+      // Clear any previous data
+      setCareerData(null);
       
+      // Single API request with clear completion tracking
       const response = await careerAnalysisService.analyzeTypeformResponse(responseId);
-      console.log('Response structure:', JSON.stringify(response, null, 2));
+      console.log('Analysis complete. Processing results...');
       
-      // The response should have structure { success: boolean, response_id: string, analysis: CareerAnalysisData }
+      // Process the response only after the API call is fully complete
       if (response && response.analysis) {
         console.log('Analysis data received successfully');
         setCareerData(response.analysis);
+        
+        // Only attempt to get a review after career analysis is complete
+        // And do it within this try block so career analysis can succeed even if review fails
+        try {
+          console.log('Fetching relevant review based on analysis...');
+          await getRelevantReview(response.analysis);
+          console.log('Review fetching complete');
+        } catch (reviewError) {
+          console.error('Error fetching review, but continuing with analysis display:', reviewError);
+          // Don't rethrow - we want career analysis to succeed even if review fails
+        }
       } else if (response && response.success === false) {
         console.error('API returned success: false', response);
         throw new Error(response.error || 'Failed to analyze your response');
@@ -65,13 +90,18 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         console.error('Invalid response structure:', response);
         throw new Error('Invalid response data structure. This may be a temporary issue. Please try again later.');
       }
+      
+      console.log('Analysis workflow complete');
     } catch (error: any) {
       console.error('Error analyzing Typeform response:', error);
       console.error('Error details:', error.response?.data, error.stack);
       
+      // Clear any partial data
+      setCareerData(null);
+      
       // Special handling for timeout errors
       if (error.code === 'ECONNABORTED') {
-        const timeoutMessage = 'The request timed out. Your analysis is processing but taking longer than expected. Please wait a moment and refresh the page to see if your analysis is complete.';
+        const timeoutMessage = 'The request timed out. Please try again in a few moments.';
         console.error(timeoutMessage);
         setError(timeoutMessage);
       } else {
@@ -79,7 +109,40 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         setError(errorMessage);
       }
     } finally {
+      console.log('Analysis process complete, resetting loading state');
       setIsLoading(false);
+    }
+  };
+
+  // Fetch relevant review based on analysis data
+  const getRelevantReview = async (analysisData: CareerAnalysisData) => {
+    try {
+      setIsReviewLoading(true);
+      const strengths = analysisData.strengths.map(s => s.strength);
+      const skillsToImprove = analysisData.skillsToImprove.map(s => s.skill);
+      const careerPaths = analysisData.recommendedCareerPaths.map(p => p.title);
+      
+      // Use the top career path as the course interest
+      const program = careerPaths.length > 0 ? careerPaths[0] : '';
+      
+      const profileData = {
+        skills: [...strengths, ...skillsToImprove],
+        experience: [],
+        education: [],
+        interests: [],
+        course_interest: program,
+        program
+      };
+      
+      const response = await reviewsService.getRelevantReview(profileData);
+      setReview(response.review);
+      setIsReviewLoading(false);
+    } catch (error) {
+      console.error('Error fetching relevant review:', error);
+      setIsReviewLoading(false);
+      // Continue without a review - don't block the analysis display
+      // Just set review to undefined
+      setReview(undefined);
     }
   };
 
@@ -93,7 +156,12 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
         careerData,
         setCareerData,
         analyzeCareer,
-        analyzeTypeformResponse
+        analyzeTypeformResponse,
+        getRelevantReview,
+        isReviewLoading,
+        setIsReviewLoading,
+        review,
+        setReview
       }}
     >
       {children}

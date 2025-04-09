@@ -3,6 +3,9 @@ import { CareerAnalysisData } from '@/types/career';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Request tracking to prevent duplicate calls
+const pendingRequests: Record<string, Promise<any>> = {};
+
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: API_URL,
@@ -27,6 +30,35 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Make an API request, ensuring that only one request to the same endpoint is in progress at a time
+ * @param config Axios request config
+ * @param requestId Unique identifier for the request (defaults to URL)
+ * @returns Promise with the API response
+ */
+const makeRequest = async (config: any, requestId?: string) => {
+  // Use URL as the default request ID if none provided
+  const id = requestId || config.url;
+  
+  // If there's already a pending request to this endpoint, return that promise instead
+  if (pendingRequests[id]) {
+    console.log(`Request to ${id} already in progress, reusing existing request`);
+    return pendingRequests[id];
+  }
+  
+  // Create a new request and store the promise
+  console.log(`Starting new request to ${id}`);
+  const requestPromise = api(config)
+    .finally(() => {
+      // Remove from pending requests when done
+      console.log(`Request to ${id} completed, removing from pending requests`);
+      delete pendingRequests[id];
+    });
+    
+  pendingRequests[id] = requestPromise;
+  return requestPromise;
+};
+
 // Career analysis service
 const careerAnalysisService = {
   /**
@@ -34,10 +66,10 @@ const careerAnalysisService = {
    */
   checkVectorStore: async (): Promise<boolean> => {
     try {
-      const response = await api({
+      const response = await makeRequest({
         method: 'GET',
         url: '/api/v1/vectorstore/check-vectorstore',
-      });
+      }, 'check-vectorstore');
       
       return response.data.exists;
     } catch (error) {
@@ -57,14 +89,14 @@ const careerAnalysisService = {
       
       // Create headers without Content-Type for FormData
       // Let the browser set the Content-Type and boundary
-      const response = await api({
+      const response = await makeRequest({
         method: 'POST',
         url: '/api/v1/career/analyze',
         data: formData,
         headers: {
           Accept: 'application/json',
         }
-      });
+      }, 'analyze-career');
       
       console.log('Received response:', response.data);
       return response.data;
@@ -80,24 +112,30 @@ const careerAnalysisService = {
    * @param responseId - Typeform response ID to analyze
    */
   analyzeTypeformResponse: async (responseId: string, retryCount = 0): Promise<{success: boolean, response_id: string, analysis: CareerAnalysisData}> => {
+    if (retryCount > 5) {
+      console.error('Max retry attempts reached for typeform analysis');
+      throw new Error('Maximum retry attempts reached for analyzing Typeform response');
+    }
+    
     try {
-      console.log('Analyzing Typeform response with ID:', responseId);
+      // Add exponential backoff to avoid overwhelming the server
+      if (retryCount > 0) {
+        const backoffTime = Math.min(Math.pow(2, retryCount) * 1000, 8000); // 2s, 4s, 8s max
+        console.log(`Retry attempt ${retryCount}, waiting ${backoffTime}ms before retrying...`);
+        await delay(backoffTime);
+      }
       
-      // Add additional logging to debug the URL
-      const url = `/api/v1/typeform/analyze/${responseId}`;
-      console.log('Making request to URL:', url);
+      // Use the responseId as part of the request ID to deduplicate requests for the same form
+      const requestId = `typeform-analyze-${responseId}`;
       
-      const response = await api({
+      const response = await makeRequest({
         method: 'POST',
-        url: url,
-        // Removed withCredentials to fix CORS issue
-        // Set an even longer timeout for this specific operation (3 minutes)
-        timeout: 180000,
+        url: `/api/v1/typeform/analyze/${responseId}`,
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         }
-      });
+      }, requestId);
       
       console.log('Received Typeform analysis response:', response.data);
       return response.data;
@@ -107,9 +145,10 @@ const careerAnalysisService = {
       console.error('Error status:', error.response?.status);
       console.error('Error headers:', error.response?.headers);
       
-      // Implement automatic retry logic for timeout errors
-      if (error.code === 'ECONNABORTED' && retryCount < 2) {
-        console.log(`Request timed out. Retrying (${retryCount + 1}/2)...`);
+      // Only retry on network errors or 500 errors
+      if (axios.isAxiosError(error) && 
+          (error.code === 'ERR_NETWORK' || (error.response && error.response.status >= 500))) {
+        console.log(`Error analyzing Typeform response, retrying (${retryCount + 1}/5)...`);
         return careerAnalysisService.analyzeTypeformResponse(responseId, retryCount + 1);
       }
       
@@ -123,14 +162,14 @@ const careerAnalysisService = {
    */
   setupVectorStore: async (formData: FormData): Promise<any> => {
     try {
-      const response = await api({
+      const response = await makeRequest({
         method: 'POST',
         url: '/api/v1/vectorstore/setup-vectorstore',
         data: formData,
         headers: {
           Accept: 'application/json',
         }
-      });
+      }, 'setup-vectorstore');
       
       return response.data;
     } catch (error) {
@@ -151,14 +190,14 @@ const contactService = {
    */
   submitContact: async (formData: FormData): Promise<{ message: string; submission_id: number }> => {
     try {
-      const response = await api({
+      const response = await makeRequest({
         method: 'POST',
         url: '/api/v1/contact/submit',
         data: formData,
         headers: {
           Accept: 'application/json',
         }
-      });
+      }, 'submit-contact');
       
       return response.data;
     } catch (error) {
@@ -176,7 +215,10 @@ const reviewsService = {
    */
   getRelevantReview: async (profileData: any): Promise<any> => {
     try {
-      const response = await api({
+      // Create a unique ID based on a hash of the profileData
+      const requestId = `get-review-${JSON.stringify(profileData).length}`;
+      
+      const response = await makeRequest({
         method: 'POST',
         url: '/api/v1/reviews/get-relevant-review',
         data: { profileData },
@@ -184,7 +226,7 @@ const reviewsService = {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         }
-      });
+      }, requestId);
       
       return response.data;
     } catch (error) {
@@ -193,6 +235,9 @@ const reviewsService = {
     }
   },
 };
+
+// Helper function for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export { careerAnalysisService, contactService, reviewsService };
 
