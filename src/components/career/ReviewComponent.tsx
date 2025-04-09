@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Shield, CheckCircle } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import api from '@/services/api';
 
 // Types for review data
@@ -40,7 +40,6 @@ type ProfileData = {
   interests: string[];
   course_interest?: string;
   program?: string;
-  is_mock_data?: boolean;
 };
 
 interface ReviewComponentProps {
@@ -50,9 +49,6 @@ interface ReviewComponentProps {
 // Create a global cache for reviews that persists between renders
 // This is outside the component to avoid being recreated
 const globalReviewCache = new Map<string, {review: Review | null, error: string | null}>();
-
-// For debugging purposes
-console.log("ReviewComponent module loaded, cache size:", globalReviewCache.size);
 
 // Helper function to render stars
 const renderStars = (count: number) => {
@@ -65,48 +61,6 @@ const renderStars = (count: number) => {
     );
   }
   return stars;
-};
-
-// Add a mock review function that generates a review based on the program
-const getMockReview = (program: string): Review => {
-  // Default values
-  let reviewerName = "Sarah Johnson";
-  let course = "Data Science Program";
-  let reviewTitle = "Transformed My Career Path";
-  let reviewContent = "The program was exactly what I needed to transition into data science. The curriculum was comprehensive and the instructors were knowledgeable and supportive.";
-  
-  // Customize based on program
-  if (program.toLowerCase().includes("data analytics")) {
-    reviewerName = "Michael Chen";
-    course = "Data Analytics Bootcamp";
-    reviewTitle = "Excellent Analytics Training";
-    reviewContent = "The Data Analytics program exceeded my expectations. I gained practical skills that I could immediately apply in my current role, and within six months I received a promotion to a senior analytics position.";
-  } else if (program.toLowerCase().includes("ai")) {
-    reviewerName = "Priya Sharma";
-    course = "AI Engineering Certificate";
-    reviewTitle = "Perfect Introduction to AI";
-    reviewContent = "Coming from a software development background, this program was the perfect bridge to AI engineering. The hands-on projects were challenging but extremely valuable for building my portfolio.";
-  } else if (program.toLowerCase().includes("marketing")) {
-    reviewerName = "James Wilson";
-    course = "Digital Marketing & Analytics";
-    reviewTitle = "Game Changer for Marketing Career";
-    reviewContent = "This program helped me transition from traditional marketing to a data-driven approach. I'm now managing campaigns with measurable ROI and getting much better results for my clients.";
-  }
-  
-  return {
-    reviewer_name: reviewerName,
-    review_date: "March 2025",
-    student_type: "Graduate",
-    course: course,
-    format: "Online",
-    verified: "Yes",
-    review_title: reviewTitle,
-    review_content: reviewContent,
-    overall_rating: "5",
-    instructor_rating: "5",
-    curriculum_rating: "4",
-    job_assistance_rating: "5"
-  };
 };
 
 const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
@@ -127,32 +81,8 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
     return `${program}-${skills}`;
   }, [profileData]);
   
-  // UseEffect for debugging
-  useEffect(() => {
-    // If this is marked as mock data and has a program, we can generate a mock review
-    if (profileData?.is_mock_data && profileData?.program) {
-      console.log("Using mock review for program:", profileData.program);
-      const mockReview = getMockReview(profileData.program);
-      setReview(mockReview);
-      setLoading(false);
-      setDebugInfo('Using mock review');
-      return;
-    }
-    
-    console.log("ReviewComponent mounted with key:", cacheKey);
-    
-    return () => {
-      console.log("ReviewComponent unmounted with key:", cacheKey);
-    };
-  }, [cacheKey, profileData]);
-  
   // Main data fetching useEffect
   useEffect(() => {
-    // Skip if this is mock data - we'll handle it in the other useEffect
-    if (profileData?.is_mock_data) {
-      return;
-    }
-    
     // Set mounted flag to true when component mounts
     isMountedRef.current = true;
     
@@ -180,21 +110,18 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
       setError(cachedResult.error);
       setLoading(false);
       setDebugInfo('Retrieved from cache');
-      console.log("Review loaded from cache for key:", cacheKey);
       return;
     }
     
     setDebugInfo('Fetching from API...');
-    console.log("Fetching review from API for key:", cacheKey);
     
     // Set up controller for this request
     controllerRef.current = new AbortController();
     const timeoutId = setTimeout(() => {
       if (controllerRef.current) {
         controllerRef.current.abort();
-        console.log("Review request timed out for key:", cacheKey);
       }
-    }, 15000); // Increased timeout to 15 seconds
+    }, 20000); // Increased timeout to 20 seconds for real data
     
     const fetchReview = async () => {
       try {
@@ -210,20 +137,18 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
           { profileData: profileDataClone },
           { 
             signal: controllerRef.current?.signal,
-            timeout: 15000 
+            timeout: 20000 
           }
         );
         
         // Only update state if component is still mounted
         if (isMountedRef.current) {
           if (response.data && response.data.success && response.data.review) {
-            console.log("Review fetched successfully for key:", cacheKey);
             const result = { review: response.data.review, error: null };
             setReview(result.review);
             setDebugInfo('Review loaded successfully');
             globalReviewCache.set(cacheKey, result);
           } else {
-            console.log("No relevant review found for key:", cacheKey);
             const result = { review: null, error: 'No relevant review found' };
             setError(result.error);
             setDebugInfo('No relevant review found');
@@ -243,7 +168,6 @@ const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
             errorMessage = 'Server error. Our team has been notified.';
           }
           
-          console.error("Error fetching review for key:", cacheKey, err);
           setError(errorMessage);
           setDebugInfo(`Error: ${errorMessage}`);
           

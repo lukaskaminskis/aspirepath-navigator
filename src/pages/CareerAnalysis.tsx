@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -35,14 +35,12 @@ const CareerAnalysis = () => {
     isLoading, 
     error, 
     careerData, 
-    analyzeTypeformResponse,
-    getRelevantReview 
+    analyzeTypeformResponse
   } = useCareerAnalysis();
   
   // Use refs to track analysis state
   const analysisStartedRef = useRef<boolean>(false);
   const responseIdRef = useRef<string | null>(null);
-  const reviewLoadedRef = useRef<boolean>(false);
   
   // Get responseId from URL params if available
   const { responseId } = useParams<{ responseId?: string }>();
@@ -85,22 +83,6 @@ const CareerAnalysis = () => {
     }
   }, [responseId]);
 
-  // Log automation risk insight when it's available
-  useEffect(() => {
-    if (careerData) {
-      console.log('automationRiskInsight value:', careerData.automationRiskInsight);
-      
-      // Explicitly load review when career data is available
-      if (!reviewLoadedRef.current) {
-        console.log('Explicitly triggering review loading for career data');
-        reviewLoadedRef.current = true;
-        getRelevantReview(careerData).catch(err => {
-          console.error('Error loading review:', err);
-        });
-      }
-    }
-  }, [careerData, getRelevantReview]);
-
   // Handle analysis lifecycle
   useEffect(() => {
     // Only proceed if we have a responseId and should show analysis
@@ -116,7 +98,6 @@ const CareerAnalysis = () => {
     // Mark that we've started analysis and store the responseId
     analysisStartedRef.current = true;
     responseIdRef.current = typeformResponseId;
-    reviewLoadedRef.current = false; // Reset review loaded flag
     
     console.log('Starting analysis for response ID:', typeformResponseId);
     
@@ -155,19 +136,6 @@ const CareerAnalysis = () => {
     setIsLoaded(false);
     window.location.href = '/career-analysis';
   };
-
-  // Check if we're seeing mock data
-  const isMockData = useMemo(() => {
-    if (!careerData) return false;
-    
-    // The mock data always has these exact values
-    return (
-      careerData.automationRiskScore === 6 &&
-      careerData.automationRiskInsight === "While your core role is safe, 35% of your daily tasks could be automated in the next 18 months." &&
-      careerData.recommendedCareerPaths.some(path => path.title === "Data Analytics Manager") &&
-      careerData.recommendedCareerPaths.some(path => path.title === "AI Implementation Specialist")
-    );
-  }, [careerData]);
 
   return (
     <PageLayout>
@@ -383,9 +351,7 @@ const CareerAnalysis = () => {
                       education: [],
                       interests: [],
                       course_interest: careerData.recommendedCareerPaths[0]?.title || "",
-                      program: careerData.recommendedCareerPaths[0]?.title || "",
-                      // Add a flag to indicate this is mock data for styling
-                      is_mock_data: isMockData 
+                      program: careerData.recommendedCareerPaths[0]?.title || ""
                     }} 
                   />
                 )}
