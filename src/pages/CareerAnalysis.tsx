@@ -81,6 +81,14 @@ const CareerAnalysis = () => {
     window.scrollTo(0, 0);
   };
 
+  // Add a reset handler to allow users to try again after errors
+  const handleReset = () => {
+    setTypeformResponseId(null);
+    setShowAnalysis(false);
+    setIsLoaded(false);
+    window.location.href = '/career-analysis';
+  };
+
   return (
     <PageLayout>
       {!showAnalysis ? (
@@ -116,6 +124,9 @@ const CareerAnalysis = () => {
               <Loader className="h-12 w-12 animate-spin text-primary mb-4" />
               <p className="text-xl font-medium">Analyzing your career profile...</p>
               <p className="text-muted-foreground mt-2">This may take a moment</p>
+              <div className="mt-6">
+                <Button variant="ghost" onClick={handleReset}>Cancel</Button>
+              </div>
             </div>
           )}
 
@@ -128,8 +139,8 @@ const CareerAnalysis = () => {
                 </AlertDescription>
               </Alert>
               <div className="mt-6 text-center">
-                <Button onClick={() => setShowAnalysis(false)}>
-                  Go Back
+                <Button onClick={handleReset}>
+                  Try Again
                 </Button>
               </div>
             </div>
