@@ -116,6 +116,12 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
 
   // Fetch relevant review based on analysis data
   const getRelevantReview = async (analysisData: CareerAnalysisData) => {
+    // Prevent multiple calls at once
+    if (isReviewLoading) {
+      console.log('Already fetching review, not starting another request');
+      return;
+    }
+    
     try {
       setIsReviewLoading(true);
       const strengths = analysisData.strengths.map(s => s.strength);
@@ -135,14 +141,22 @@ export const CareerAnalysisProvider: React.FC<{ children: ReactNode }> = ({ chil
       };
       
       const response = await reviewsService.getRelevantReview(profileData);
-      setReview(response.review);
-      setIsReviewLoading(false);
+      
+      // Check if response has a review property before setting it
+      if (response && response.success !== false && response.review) {
+        console.log('Successfully fetched review');
+        setReview(response.review);
+      } else {
+        console.log('Review service returned empty or error response');
+        setReview(undefined);
+      }
     } catch (error) {
       console.error('Error fetching relevant review:', error);
-      setIsReviewLoading(false);
       // Continue without a review - don't block the analysis display
-      // Just set review to undefined
       setReview(undefined);
+    } finally {
+      // Always reset loading state to prevent UI getting stuck
+      setIsReviewLoading(false);
     }
   };
 

@@ -48,15 +48,26 @@ const makeRequest = async (config: any, requestId?: string) => {
   
   // Create a new request and store the promise
   console.log(`Starting new request to ${id}`);
-  const requestPromise = api(config)
-    .finally(() => {
-      // Remove from pending requests when done
+  
+  try {
+    // Create the promise but don't await it yet
+    const requestPromise = api(config).finally(() => {
+      // Ensure cleanup happens even if there's an error
       console.log(`Request to ${id} completed, removing from pending requests`);
       delete pendingRequests[id];
     });
     
-  pendingRequests[id] = requestPromise;
-  return requestPromise;
+    // Store the promise for potential reuse
+    pendingRequests[id] = requestPromise;
+    
+    // Now await and return the result
+    return await requestPromise;
+  } catch (error) {
+    // Ensure the request is removed from pending on error
+    console.log(`Request to ${id} failed, removing from pending requests`);
+    delete pendingRequests[id];
+    throw error;
+  }
 };
 
 // Career analysis service
@@ -218,6 +229,7 @@ const reviewsService = {
       // Create a unique ID based on a hash of the profileData
       const requestId = `get-review-${JSON.stringify(profileData).length}`;
       
+      // Use a shorter timeout for review requests
       const response = await makeRequest({
         method: 'POST',
         url: '/api/v1/reviews/get-relevant-review',
@@ -225,13 +237,16 @@ const reviewsService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-        }
+        },
+        // Use a shorter timeout for review requests
+        timeout: 10000
       }, requestId);
       
       return response.data;
     } catch (error) {
       console.error('Error getting relevant review:', error);
-      throw error;
+      // Return a fallback empty response to prevent endless retries
+      return { success: false, review: '', message: 'Failed to fetch review' };
     }
   },
 };
