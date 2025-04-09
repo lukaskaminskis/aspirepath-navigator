@@ -46,10 +46,13 @@ interface ReviewComponentProps {
   profileData: ProfileData;
 }
 
-// Helper function to render stars
+// Generate fewer stars to reduce DOM elements
 const renderStars = (count: number) => {
+  // Limit to maximum 5 stars
   const stars = [];
-  for (let i = 0; i < count; i++) {
+  const validCount = Math.min(Math.max(0, count), 5);
+  
+  for (let i = 0; i < validCount; i++) {
     stars.push(
       <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
@@ -59,218 +62,126 @@ const renderStars = (count: number) => {
   return stars;
 };
 
+// Simplified loading skeleton with fewer elements
+const LoadingSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-md p-8">
+    <div className="flex items-center gap-4">
+      <div className="flex-shrink-0 bg-gray-200 w-16 h-16 rounded-full"></div>
+      <div className="w-full">
+        <div className="h-5 bg-gray-200 rounded w-1/3 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Simple error/empty state component
+const ErrorState = () => (
+  <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="text-center">
+      <p className="text-gray-500">We couldn't find a relevant review for your profile.</p>
+    </div>
+  </div>
+);
+
 const ReviewComponent = ({ profileData }: ReviewComponentProps) => {
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [requestInProgress, setRequestInProgress] = useState<boolean>(false);
   const [requestAttempted, setRequestAttempted] = useState<boolean>(false);
 
   useEffect(() => {
-    // Track whether component is mounted to prevent state updates after unmount
+    // Skip review fetching if no profile data or already attempted
+    if (!profileData || requestAttempted) {
+      return;
+    }
+
+    // Track if component is mounted
     let isMounted = true;
+    let controller: AbortController | null = null;
     
-    const fetchRelevantReview = async () => {
-      // Only try once per component lifecycle
-      if (requestAttempted) {
-        console.log('Review already attempted for this component instance, not retrying');
-        return;
-      }
-      
-      // Prevent multiple concurrent requests
-      if (requestInProgress) {
-        console.log('Review request already in progress, skipping');
-        return;
-      }
-      
+    const fetchReview = async () => {
       try {
         setLoading(true);
-        setRequestInProgress(true);
-        // Mark as attempted immediately to prevent retry loops
         setRequestAttempted(true);
-        setError(null);
         
-        console.log('Fetching review with profile data');
+        // Create abort controller for this request
+        controller = new AbortController();
+        const timeoutId = setTimeout(() => controller?.abort(), 8000);
         
-        // Add timeout to prevent hanging requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        // Make direct API call with timeout
         const response = await api.post('/api/v1/reviews/get-relevant-review', 
           { profileData },
-          { 
-            signal: controller.signal,
-            timeout: 10000 
-          }
+          { signal: controller.signal, timeout: 8000 }
         );
         
-        // Clear timeout since request completed
         clearTimeout(timeoutId);
         
-        // Only update state if component is still mounted
-        if (isMounted) {
-          if (response.data && response.data.success && response.data.review) {
-            console.log('Successfully fetched review');
-            setReview(response.data.review);
-          } else if (response.data && response.data.review === "") {
-            console.log('No review content returned');
-            setError('No relevant review found');
-          } else {
-            console.log('Invalid review response');
-            throw new Error('Failed to fetch review');
-          }
+        if (isMounted && response.data?.success && response.data?.review) {
+          setReview(response.data.review);
+        } else {
+          setError('No review available');
         }
-      } catch (err: any) {
-        // Only update state if component is still mounted
+      } catch (err) {
         if (isMounted) {
-          console.error('Error fetching relevant review - will not retry');
-          
-          // Handle specific error types
-          if (err.name === 'AbortError') {
-            setError('Request timed out. Please try again later.');
-          } else if (err.code === 'ECONNABORTED') {
-            setError('Connection timed out. Please check your internet connection.');
-          } else if (err.response?.status === 500) {
-            setError('Server error. Our team has been notified.');
-          } else {
-            setError('Failed to load a relevant review');
-          }
+          console.error('Review fetch error - will not retry');
+          setError('Failed to load review');
         }
       } finally {
-        // Only update state if component is still mounted
         if (isMounted) {
           setLoading(false);
-          setRequestInProgress(false);
         }
       }
     };
-
-    if (profileData && isMounted && !requestAttempted) {
-      fetchRelevantReview();
-    }
     
-    // Cleanup function to run when component unmounts
+    // Start fetch process
+    fetchReview();
+    
+    // Cleanup function
     return () => {
       isMounted = false;
+      controller?.abort();
     };
-  }, [profileData, requestInProgress, requestAttempted]);
+  }, [profileData, requestAttempted]);
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-md p-8 animate-pulse">
-        <div className="flex flex-col md:flex-row md:items-start gap-6">
-          <div className="flex-shrink-0 bg-gray-200 w-24 h-24 rounded-full"></div>
-          <div className="flex-grow">
-            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-4/5"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Render loading state
+  if (loading) return <LoadingSkeleton />;
+  
+  // Render error state
+  if (error || !review) return <ErrorState />;
 
-  if (error || !review) {
-    // Fallback message when no review is found or there's an error
-    return (
-      <div className="bg-white rounded-xl shadow-md p-8">
-        <div className="text-center">
-          <p className="text-gray-500">We couldn't find a relevant review for your profile at this time.</p>
-          <p className="text-gray-700 mt-2">Please check back later or contact support.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Generate initials for avatar if we don't have an image
-  const names = review.reviewer_name.split(' ');
-  const initials = names.map(name => name.charAt(0)).join('');
-  const backgroundColors = ['0D8ABC', '4C1D95', '065F46', '991B1B', '1E40AF'];
-  // Generate a consistent color based on name
-  const colorIndex = review.reviewer_name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % backgroundColors.length;
-  const avatarBgColor = backgroundColors[colorIndex];
-
+  // Simplified review renderer - less DOM elements
   return (
-    <div className="bg-white rounded-xl shadow-md p-8">
-      <div className="flex flex-col md:flex-row md:items-start gap-6">
+    <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="flex gap-4">
         <div className="flex-shrink-0">
-          <img 
-            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewer_name)}&background=${avatarBgColor}&color=fff`} 
-            alt={review.reviewer_name} 
-            className="w-24 h-24 rounded-full object-cover"
-          />
+          {/* Use colored div instead of avatar image API call */}
+          <div 
+            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl bg-blue-600"
+            aria-label={`${review.reviewer_name}'s avatar`}
+          >
+            {review.reviewer_name.charAt(0)}
+          </div>
         </div>
         <div className="flex-grow">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
-            <h3 className="text-xl font-semibold text-black">{review.reviewer_name}</h3>
-            <span className="text-muted-foreground">{review.review_date}</span>
+          <div className="flex flex-col mb-2">
+            <h3 className="text-lg font-semibold text-black">{review.reviewer_name}</h3>
+            <span className="text-sm text-muted-foreground">{review.student_type}</span>
           </div>
           
-          <div className="mb-4">
-            <p className="text-muted-foreground">
-              {review.student_type} • {review.course} • {review.format}
-            </p>
-            
-            {review.verified === "Yes" && (
-              <div className="flex items-center mt-1">
-                <div className="rounded-full bg-emerald-100 p-1 mr-2">
-                  <Shield className="h-4 w-4 text-emerald-600" />
-                </div>
-                <span className="text-emerald-600 text-sm font-medium">Verified by GitHub</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-black">Overall Experience</span>
-                <div className="flex">
-                  {renderStars(parseInt(review.overall_rating))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-black">Instructors</span>
-                <div className="flex">
-                  {renderStars(parseInt(review.instructor_rating))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-black">Curriculum</span>
-                <div className="flex">
-                  {renderStars(parseInt(review.curriculum_rating))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-black">Job Assistance</span>
-                <div className="flex">
-                  {renderStars(parseInt(review.job_assistance_rating))}
-                </div>
-              </div>
+          {/* Just show overall rating */}
+          <div className="flex items-center mb-4">
+            <span className="text-sm mr-2">Rating:</span>
+            <div className="flex">
+              {renderStars(parseInt(review.overall_rating.toString()))}
             </div>
           </div>
           
-          <h4 className="text-lg font-medium mb-4 text-black">{review.review_title}</h4>
+          <h4 className="text-base font-medium mb-2">{review.review_title || 'Student Review'}</h4>
           
-          <div className="space-y-4 text-gray-700">
-            {review.review_content.split('\n').map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
-            ))}
-          </div>
+          {/* Only show the first paragraph of content */}
+          <p className="text-gray-700 line-clamp-4">
+            {review.review_content.split('\n')[0]}
+          </p>
         </div>
       </div>
     </div>
