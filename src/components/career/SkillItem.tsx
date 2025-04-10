@@ -36,7 +36,9 @@ export const SkillItem = ({
         <h4 className="font-medium text-black">{skill}</h4>
         <div className="space-y-1 mt-1">
           <p className="text-muted-foreground text-sm">{description}</p>
-          <p className="text-muted-foreground text-sm">{detailDescription || "Developing this skill will significantly increase your resilience to automation and enhance your marketability in adjacent career paths."}</p>
+          {detailDescription && (
+            <p className="text-muted-foreground text-sm">{detailDescription}</p>
+          )}
         </div>
       </div>
     </motion.div>

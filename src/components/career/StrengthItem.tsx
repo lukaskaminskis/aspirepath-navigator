@@ -36,16 +36,11 @@ export const StrengthItem = ({
         <h4 className="font-medium text-black">{strength}</h4>
         <div className="space-y-1 mt-1">
           <p className="text-muted-foreground text-sm">{description}</p>
-          {descriptionDetails.length > 0 ? (
+          {descriptionDetails.length > 0 && 
             descriptionDetails.map((detail, i) => (
               <p key={i} className="text-muted-foreground text-sm">{detail}</p>
             ))
-          ) : (
-            <>
-              <p className="text-muted-foreground text-sm">You consistently demonstrate this strength through effective communication and relationship building.</p>
-              <p className="text-muted-foreground text-sm">This skill will remain valuable as AI transforms the workplace and creates new opportunities.</p>
-            </>
-          )}
+          }
         </div>
       </div>
     </motion.div>
