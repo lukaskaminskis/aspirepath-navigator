@@ -218,7 +218,7 @@ const CareerAnalysis = () => {
                       institutions studying workforce transformation in the AI era.
                     </p>
                     <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8 mt-4">
-                      {/* Only render 2 logos to reduce hidden elements */}
+                      {/* Add all 4 logos including McKinsey and Epoch.ai */}
                       <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
                         <img 
                           src="/logos/World_Economic_Forum_logo.svg.png" 
@@ -230,6 +230,20 @@ const CareerAnalysis = () => {
                         <img 
                           src="/logos/hd-linkedin-blue-official-logo-png-701751694779201bpivk39ebc.png" 
                           alt="LinkedIn" 
+                          className="h-8 md:h-10 object-contain"
+                        />
+                      </div>
+                      <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                        <img 
+                          src="/logos/mckinsey-logo.png" 
+                          alt="McKinsey & Company" 
+                          className="h-8 md:h-10 object-contain"
+                        />
+                      </div>
+                      <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                        <img 
+                          src="/logos/epoch-ai-logo.png" 
+                          alt="Epoch AI" 
                           className="h-8 md:h-10 object-contain"
                         />
                       </div>
