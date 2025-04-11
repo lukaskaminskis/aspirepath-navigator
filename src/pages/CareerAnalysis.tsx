@@ -235,14 +235,14 @@ const CareerAnalysis = () => {
                       </div>
                       <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
                         <img 
-                          src="/logos/mckinsey-logo.png" 
+                          src="/logos/McKinsey-Logo.png" 
                           alt="McKinsey & Company" 
                           className="h-8 md:h-10 object-contain"
                         />
                       </div>
                       <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
                         <img 
-                          src="/logos/epoch-ai-logo.png" 
+                          src="/logos/epoch-full-standard.svg" 
                           alt="Epoch AI" 
                           className="h-8 md:h-10 object-contain"
                         />
