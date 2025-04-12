@@ -178,6 +178,13 @@ const Index = () => {
                         className="h-7 md:h-9 max-w-[110px] object-contain group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
+                    <div className="group rounded-lg bg-white shadow-sm p-3 md:p-4 hover:shadow-md transition-all duration-300 min-w-[130px] flex items-center justify-center h-16 transform hover:-translate-y-1">
+                      <img 
+                        src="/logos/HAI-full.jpg" 
+                        alt="HAI" 
+                        className="h-7 md:h-9 max-w-[110px] object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

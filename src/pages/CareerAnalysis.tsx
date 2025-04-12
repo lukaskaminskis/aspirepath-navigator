@@ -213,7 +213,7 @@ const CareerAnalysis = () => {
                     <p className="text-sm text-muted-foreground mb-5">
                       Your profile was analyzed using our proprietary AI system powered by data from 
                       the <strong>World Economic Forum's Future of Jobs Report 2025</strong>, <strong>LinkedIn Workplace Learning Report</strong>, 
-                      and <strong>Epoch AI</strong> research on automation trends and career development. 
+                      <strong>Epoch AI</strong>, and <strong>Stanford HAI</strong> research on automation trends and career development. 
                       Analysis includes insights from McKinsey & Company, Vox technology specialists, and other leading 
                       institutions studying workforce transformation in the AI era.
                     </p>
@@ -244,6 +244,13 @@ const CareerAnalysis = () => {
                         <img 
                           src="/logos/epoch-full-standard.svg" 
                           alt="Epoch AI" 
+                          className="h-8 md:h-10 object-contain"
+                        />
+                      </div>
+                      <div className="rounded-lg bg-white shadow-sm p-3 hover:shadow-md transition-shadow">
+                        <img 
+                          src="/logos/HAI-full.jpg" 
+                          alt="HAI" 
                           className="h-8 md:h-10 object-contain"
                         />
                       </div>
