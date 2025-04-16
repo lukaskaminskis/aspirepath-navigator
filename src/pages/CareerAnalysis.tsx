@@ -282,7 +282,7 @@ const CareerAnalysis = () => {
                       <h3 className="font-medium mb-6">Job Automation Risk Score</h3>
                       <ScoreIndicator score={careerData.automationRiskScore} size="lg" />
                       <p className="mt-4 text-sm text-muted-foreground">
-                        Your current role has a <strong>{careerData.automationRiskScore < 4 ? 'low' : careerData.automationRiskScore < 7 ? 'moderate' : 'high'}</strong> risk of automation within the next 3 years
+                        Your current role has a <strong>{careerData.automationRiskScore <= 4 ? 'low' : careerData.automationRiskScore <= 7 ? 'moderate' : 'high'}</strong> risk of automation within the next 3 years
                       </p>
                       
                       <div className="border-l-4 border-amber-400 pl-4 bg-amber-50 p-3 rounded-r-lg mb-6">
